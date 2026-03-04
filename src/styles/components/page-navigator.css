@@ -1,0 +1,73 @@
+/* Page Navigator (Side Dots) */
+.page-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.page-nav.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.page-nav__dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid transparent;
+    /* Increase hit area visual or border */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Hover Tooltip */
+.page-nav__dot::before {
+    content: attr(data-label);
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: white;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.page-nav__dot:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.2);
+}
+
+.page-nav__dot:hover::before {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Active State */
+.page-nav__dot.active {
+    background: var(--accent-primary);
+    box-shadow: 0 0 10px var(--accent-primary);
+    transform: scale(1.3);
+}
+
+@media (max-width: 768px) {
+    .page-nav {
+        display: none;
+        /* Hide on mobile */
+    }
+}

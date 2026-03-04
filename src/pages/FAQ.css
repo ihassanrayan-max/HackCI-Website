@@ -1,0 +1,61 @@
+/* ============================================
+   FAQ Page Styles
+   ============================================ */
+
+.faq-search {
+    margin-bottom: var(--sp-10);
+}
+
+.faq-search__input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.faq-search__input-wrap svg {
+    position: absolute;
+    left: var(--sp-4);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.faq-search__input {
+    padding-left: calc(var(--sp-4) + 24px + var(--sp-2));
+    font-size: var(--fs-base);
+}
+
+.faq-section {
+    margin-bottom: var(--sp-10);
+}
+
+.faq-section__title {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    color: var(--accent-primary);
+    margin-bottom: var(--sp-4);
+    padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.faq-contact {
+    text-align: center;
+    padding: var(--sp-12);
+    margin-top: var(--sp-12);
+}
+
+.faq-contact h3 {
+    font-size: var(--fs-xl);
+    margin-bottom: var(--sp-3);
+}
+
+.faq-contact p {
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-6);
+}
+
+.faq-contact__actions {
+    display: flex;
+    gap: var(--sp-4);
+    justify-content: center;
+    flex-wrap: wrap;
+}

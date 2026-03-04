@@ -1,0 +1,117 @@
+/* ============================================
+   Legal Pages — Privacy Policy & Code of Conduct
+   ============================================ */
+
+.legal-page {
+    min-height: 100vh;
+}
+
+.legal-page .page-hero {
+    padding-bottom: var(--sp-8);
+}
+
+.legal-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-4);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    margin-bottom: var(--sp-8);
+}
+
+.legal-back-link:hover {
+    color: var(--accent-primary);
+    background: var(--badge-bg);
+}
+
+.legal-back-link svg {
+    width: 18px;
+    height: 18px;
+}
+
+.legal-meta {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-bottom: var(--sp-10);
+}
+
+.legal-content {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10);
+    margin-bottom: var(--sp-12);
+    transition: all var(--transition-normal);
+}
+
+.legal-content:hover {
+    border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-glow);
+}
+
+.legal-content h3 {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    color: var(--text-primary);
+    margin-top: var(--sp-8);
+    margin-bottom: var(--sp-4);
+    padding-bottom: var(--sp-2);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.legal-content h3:first-child {
+    margin-top: 0;
+}
+
+.legal-content p {
+    font-size: var(--fs-base);
+    color: var(--text-secondary);
+    line-height: var(--lh-relaxed);
+    margin-bottom: var(--sp-6);
+}
+
+.legal-content p:last-child {
+    margin-bottom: 0;
+}
+
+.legal-content ul {
+    margin: var(--sp-4) 0 var(--sp-6);
+    padding-left: var(--sp-8);
+}
+
+.legal-content li {
+    font-size: var(--fs-base);
+    color: var(--text-secondary);
+    line-height: var(--lh-relaxed);
+    margin-bottom: var(--sp-3);
+}
+
+.legal-content a {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.legal-content a:hover {
+    color: var(--accent-primary-hover);
+}
+
+.legal-footer {
+    text-align: center;
+    padding-top: var(--sp-8);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--sp-8);
+}
+
+.legal-footer p {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
