@@ -56,6 +56,12 @@
     box-shadow: var(--shadow-glow);
 }
 
+@media (max-width: 480px) {
+    .legal-content {
+        padding: var(--sp-5);
+    }
+}
+
 .legal-content h3 {
     font-size: var(--fs-xl);
     font-weight: var(--fw-bold);

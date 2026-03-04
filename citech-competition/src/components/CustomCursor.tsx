@@ -10,6 +10,8 @@ export default function CustomCursor() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+
     setIsVisible(true);
 
     const handleMouseOver = (e: MouseEvent) => {

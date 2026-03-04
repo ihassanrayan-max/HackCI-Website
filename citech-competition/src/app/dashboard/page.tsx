@@ -228,13 +228,13 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-          <h1 className="text-5xl font-black tracking-tighter mb-4">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tighter mb-4">
             Welcome back,{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
               {participant?.full_name?.split(" ")[0] ?? "Participant"}
             </span>
           </h1>
-          <p className="text-xl text-zinc-400 font-light">Your command center for the CITech 2026 competition.</p>
+          <p className="text-base sm:text-xl text-zinc-400 font-light">Your command center for the CITech 2026 competition.</p>
         </motion.div>
 
         {/* Status banner if pending/rejected */}
@@ -290,7 +290,7 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[240px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:auto-rows-[240px]">
 
           {/* Status Tracker — 3 cols */}
           <motion.div
@@ -318,10 +318,10 @@ export default function DashboardPage() {
               {steps.map((step) => {
                 const status = getStepStatus(step.id);
                 return (
-                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-4">
+                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-3 sm:gap-4">
                     <motion.div
                       whileHover={{ scale: 1.1 }}
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border
+                      className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-colors border
                         ${status === "completed"
                           ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 backdrop-blur-md"
                           : status === "active"
@@ -332,14 +332,14 @@ export default function DashboardPage() {
                         }`}
                     >
                       {status === "completed" ? (
-                        <CheckCircle2 className="w-6 h-6" />
+                        <CheckCircle2 className="w-4 h-4 sm:w-6 sm:h-6" />
                       ) : status === "active" ? (
-                        <Clock className="w-6 h-6 animate-pulse" />
+                        <Clock className="w-4 h-4 sm:w-6 sm:h-6 animate-pulse" />
                       ) : (
-                        <div className="w-3 h-3 rounded-full bg-zinc-600" />
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-zinc-600" />
                       )}
                     </motion.div>
-                    <span className={`text-sm font-medium tracking-wide ${
+                    <span className={`text-xs sm:text-sm font-medium tracking-wide ${
                       status === "active" ? "text-white"
                       : status === "completed" ? "text-cyan-400"
                       : status === "rejected" ? "text-red-400"
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <form onSubmit={handleSubmission} className="flex gap-3">
+                    <form onSubmit={handleSubmission} className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="url"
                         required
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="interactive flex items-center justify-center gap-2 bg-white text-black font-bold px-6 rounded-2xl hover:bg-cyan-400 hover:scale-105 transition-all text-sm shrink-0 disabled:opacity-50"
+                        className="interactive flex items-center justify-center gap-2 bg-white text-black font-bold px-6 py-3.5 sm:py-0 rounded-2xl hover:bg-cyan-400 hover:scale-105 transition-all text-sm shrink-0 disabled:opacity-50"
                       >
                         {isSubmitting ? (
                           <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />

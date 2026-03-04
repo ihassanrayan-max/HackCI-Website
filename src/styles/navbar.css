@@ -206,3 +206,9 @@
         display: flex;
     }
 }
+
+@media (max-width: 480px) {
+    .navbar__inner {
+        padding: 0 var(--sp-4);
+    }
+}

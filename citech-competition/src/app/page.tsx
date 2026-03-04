@@ -142,7 +142,8 @@ export default function LandingPage() {
                     href="/login?mode=signup"
                     className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
                   >
-                    Register Now
+                    <span className="sm:hidden">Register</span>
+                    <span className="hidden sm:inline">Register Now</span>
                   </Link>
                 </MagneticWrapper>
               </>
@@ -166,7 +167,8 @@ export default function LandingPage() {
                       href="/dashboard"
                       className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
                     >
-                      Go to Dashboard
+                      <span className="sm:hidden">Dashboard</span>
+                      <span className="hidden sm:inline">Go to Dashboard</span>
                     </Link>
                   </MagneticWrapper>
                 ) : (
@@ -175,7 +177,8 @@ export default function LandingPage() {
                       href="/register"
                       className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
                     >
-                      Complete Registration
+                      <span className="sm:hidden">Register</span>
+                      <span className="hidden sm:inline">Complete Registration</span>
                     </Link>
                   </MagneticWrapper>
                 )}
