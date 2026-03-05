@@ -38,6 +38,9 @@ export default function ProfilePage() {
   const [program, setProgram] = useState("");
   const [year, setYear] = useState("");
   const [goals, setGoals] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [github, setGithub] = useState("");
+  const [portfolio, setPortfolio] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -56,6 +59,9 @@ export default function ProfilePage() {
       setProgram(p.program ?? "");
       setYear(p.year_of_study ?? "");
       setGoals(p.goals ?? "");
+      setLinkedin(p.linkedin_url ?? "");
+      setGithub(p.github_url ?? "");
+      setPortfolio(p.portfolio_url ?? "");
       setLoading(false);
     });
   }, [router]);
@@ -77,6 +83,9 @@ export default function ProfilePage() {
         program: program.trim() || undefined,
         year_of_study: year || undefined,
         goals: goals.trim() || null,
+        linkedin_url: linkedin.trim() || null,
+        github_url: github.trim() || null,
+        portfolio_url: portfolio.trim() || null,
       });
       setParticipant((prev) =>
         prev
@@ -90,6 +99,9 @@ export default function ProfilePage() {
               program: program.trim(),
               year_of_study: year,
               goals: goals.trim() || null,
+              linkedin_url: linkedin.trim() || null,
+              github_url: github.trim() || null,
+              portfolio_url: portfolio.trim() || null,
             }
           : null
       );
@@ -260,6 +272,44 @@ export default function ProfilePage() {
                 value={goals}
                 onChange={(e) => setGoals(e.target.value)}
                 className="mt-1.5 w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors resize-none"
+              />
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                  LinkedIn URL <span className="opacity-50">(Optional)</span>
+                </span>
+                <input
+                  type="url"
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  placeholder="https://www.linkedin.com/in/username"
+                  className="mt-1.5 w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                  GitHub URL <span className="opacity-50">(Optional)</span>
+                </span>
+                <input
+                  type="url"
+                  value={github}
+                  onChange={(e) => setGithub(e.target.value)}
+                  placeholder="https://github.com/username"
+                  className="mt-1.5 w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                Portfolio / Personal Site <span className="opacity-50">(Optional)</span>
+              </span>
+              <input
+                type="url"
+                value={portfolio}
+                onChange={(e) => setPortfolio(e.target.value)}
+                placeholder="https://your-site.com"
+                className="mt-1.5 w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
               />
             </label>
           </div>

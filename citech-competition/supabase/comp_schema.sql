@@ -58,6 +58,9 @@ CREATE TABLE IF NOT EXISTS public.comp_participants (
     program         TEXT NOT NULL,
     year_of_study   TEXT NOT NULL CHECK (year_of_study IN ('1', '2', '3', '4', '5+', 'grad')),
     goals           TEXT,
+    linkedin_url    TEXT,
+    github_url      TEXT,
+    portfolio_url   TEXT,
     status          TEXT NOT NULL DEFAULT 'pending'
                     CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -24,6 +24,9 @@ export interface CompParticipant {
   program: string;
   year_of_study: string;
   goals: string | null;
+   linkedin_url: string | null;
+   github_url: string | null;
+   portfolio_url: string | null;
   status: ParticipantStatus;
   created_at: string;
   updated_at: string;
@@ -158,7 +161,7 @@ export async function getParticipantById(
 export async function updateMyParticipant(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
   participantId: string,
-  payload: Partial<Pick<CompParticipant, "full_name" | "age" | "university" | "university_name" | "student_id" | "program" | "year_of_study" | "goals">>
+  payload: Partial<Pick<CompParticipant, "full_name" | "age" | "university" | "university_name" | "student_id" | "program" | "year_of_study" | "goals" | "linkedin_url" | "github_url" | "portfolio_url">>
 ) {
   const { error } = await supabase
     .from("comp_participants")
@@ -808,8 +811,19 @@ export async function adminGetJoinRequestsForTeam(
 
 export function exportParticipantsCSV(participants: CompParticipant[]): string {
   const headers = [
-    "Name", "Email", "Age", "University", "Student ID", "Program",
-    "Year of Study", "Goals", "Status", "Registered At",
+    "Name",
+    "Email",
+    "Age",
+    "University",
+    "Student ID",
+    "Program",
+    "Year of Study",
+    "Goals",
+    "LinkedIn",
+    "GitHub",
+    "Portfolio",
+    "Status",
+    "Registered At",
   ];
   const rows = participants.map((p) => [
     p.full_name,
@@ -820,6 +834,9 @@ export function exportParticipantsCSV(participants: CompParticipant[]): string {
     p.program,
     p.year_of_study,
     (p.goals ?? "").replace(/,/g, ";"),
+    p.linkedin_url ?? "",
+    p.github_url ?? "",
+    p.portfolio_url ?? "",
     p.status,
     p.created_at,
   ]);

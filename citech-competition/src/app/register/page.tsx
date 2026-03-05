@@ -18,6 +18,9 @@ interface FormData {
   program: string;
   year: string;
   goals: string;
+  linkedin: string;
+  github: string;
+  portfolio: string;
 }
 
 const InputField = ({
@@ -90,6 +93,9 @@ export default function RegisterPage() {
     program: "",
     year: "",
     goals: "",
+    linkedin: "",
+    github: "",
+    portfolio: "",
   });
 
   const [nameEditable, setNameEditable] = useState(false);
@@ -165,6 +171,9 @@ export default function RegisterPage() {
         program: formData.program,
         year_of_study: formData.year,
         goals: formData.goals || null,
+        linkedin_url: formData.linkedin || null,
+        github_url: formData.github || null,
+        portfolio_url: formData.portfolio || null,
       });
 
       setIsSubmitting(false);
@@ -493,6 +502,42 @@ export default function RegisterPage() {
                   />
                 )}
               </AnimatePresence>
+            </div>
+
+            {/* Optional links */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+              <InputField
+                label="LinkedIn URL (optional)"
+                id="linkedin"
+                name="linkedin"
+                type="url"
+                value={formData.linkedin}
+                onChange={(v: string) => setFormData((d) => ({ ...d, linkedin: v }))}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
+              />
+              <InputField
+                label="GitHub URL (optional)"
+                id="github"
+                name="github"
+                type="url"
+                value={formData.github}
+                onChange={(v: string) => setFormData((d) => ({ ...d, github: v }))}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
+              />
+            </div>
+            <div className="pt-2">
+              <InputField
+                label="Portfolio / Personal Site (optional)"
+                id="portfolio"
+                name="portfolio"
+                type="url"
+                value={formData.portfolio}
+                onChange={(v: string) => setFormData((d) => ({ ...d, portfolio: v }))}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
+              />
             </div>
 
             <button
