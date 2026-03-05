@@ -390,6 +390,29 @@ export default function TeamHubPage() {
     return () => { supabase.removeChannel(channel); };
   }, [team?.id, participant]);
 
+  // ── Realtime: subscribe to global event state (locks) ─────────────
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel("comp_event_state_team_hub")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "comp_event_state", filter: "id=eq.1" },
+        (payload) => {
+          if (payload.new) {
+            setEventState(mapEventState(payload.new as any));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const clearError = () => setActionError(null);

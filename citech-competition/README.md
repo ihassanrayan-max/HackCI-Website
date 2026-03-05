@@ -50,8 +50,8 @@ All tables are prefixed with `comp_` to avoid collisions with other projects in 
 
 ## Deployment
 
-This app is deployed via Netlify with the base directory set to `citech-competition/`.
+This app is deployed via Vercel with the **Root Directory** set to `citech-competition/`.
 
-- **Build command**: `npm run build`
-- **Publish directory**: `.next`
+- **Framework Preset**: Next.js (auto-detected)
+- **Build command**: default (`next build`)
 - **Node version**: 20+

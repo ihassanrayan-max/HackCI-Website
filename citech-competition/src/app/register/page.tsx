@@ -96,6 +96,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const supabase = createClient();
+
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         const isAdmin = await checkIsAdmin(supabase);
@@ -127,6 +128,23 @@ export default function RegisterPage() {
       }
       setAuthLoading(false);
     });
+
+    const channel = supabase
+      .channel("comp_event_state_register")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "comp_event_state", filter: "id=eq.1" },
+        (payload) => {
+          if (payload.new) {
+            setEventState(mapEventState(payload.new as any));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
