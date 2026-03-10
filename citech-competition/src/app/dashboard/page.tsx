@@ -7,11 +7,9 @@ import {
   Upload,
   Trophy,
   Users,
-  User,
   LogOut,
   Code,
   ChevronRight,
-  Activity,
   BookOpen,
   Sparkles,
   Medal,
@@ -68,7 +66,7 @@ export default function DashboardPage() {
       const p = await getMyParticipant(supabase);
       if (!p) {
         const isAdmin = await checkIsAdmin(supabase);
-        router.push(isAdmin ? "/admin" : "/register");
+        router.push(isAdmin ? "/admin" : "/");
         return;
       }
       setParticipant(p);
@@ -136,31 +134,6 @@ export default function DashboardPage() {
     router.push("/");
   };
 
-  const getStepStatus = (step: number) => {
-    if (step === 1) return participant ? "completed" : "active";
-    if (step === 2) return participant?.status === "approved" ? "completed" : participant?.status === "rejected" ? "rejected" : "active";
-    if (step === 3) return eventState.briefingReleased ? "completed" : "active";
-    if (step === 4) return submission ? "completed" : eventState.submissionsOpen ? "active" : "pending";
-    return "pending";
-  };
-
-  const steps = [
-    { id: 1, label: "Registered" },
-    { id: 2, label: "Approved" },
-    { id: 3, label: "Event Started" },
-    { id: 4, label: "Submitted" },
-  ];
-
-  const progressWidth = submission
-    ? "100%"
-    : eventState.submissionsOpen
-    ? "75%"
-    : eventState.briefingReleased
-    ? "66%"
-    : participant?.status === "approved"
-    ? "33%"
-    : "10%";
-
   const bentoVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 20 },
     visible: {
@@ -195,15 +168,6 @@ export default function DashboardPage() {
             CITech Portal
           </Link>
           <div className="flex items-center gap-4">
-            <MagneticWrapper>
-              <Link
-                href="/profile"
-                className="interactive px-5 py-2.5 rounded-full border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <User className="w-4 h-4" />
-                Profile
-              </Link>
-            </MagneticWrapper>
             <MagneticWrapper>
               <Link
                 href="/team"
@@ -292,88 +256,82 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:auto-rows-[240px]">
 
-          {/* Status Tracker — 3 cols */}
+          {/* Application status */}
           <motion.div
             variants={bentoVariants}
             initial="hidden"
             animate="visible"
             transition={{ delay: 0.1 }}
-            className="md:col-span-2 lg:col-span-3 row-span-1 bg-white/[0.02] border border-white/10 rounded-3xl p-8 relative overflow-hidden group hover:border-cyan-500/30 transition-colors"
+            className="md:col-span-2 lg:col-span-3 row-span-1 bg-white/[0.02] border border-white/10 rounded-3xl p-8 relative overflow-hidden group"
           >
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Activity className="w-32 h-32 text-cyan-400" />
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+               {participant?.status === "approved" ? <CheckCircle2 className="w-32 h-32 text-cyan-400" /> : participant?.status === "rejected" ? <AlertCircle className="w-32 h-32 text-red-500" /> : <Clock className="w-32 h-32 text-yellow-400" />}
             </div>
-            <h2 className="text-xl font-bold mb-8 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              Mission Status
+
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full ${participant?.status === 'approved' ? 'bg-cyan-400' : participant?.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-400 animate-pulse'}`} />
+              Application Status
             </h2>
-            <div className="flex items-center justify-between relative z-10">
-              <div className="absolute top-1/2 left-0 w-full h-1 bg-white/5 -translate-y-1/2 rounded-full" />
-              <motion.div
-                className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 -translate-y-1/2 rounded-full shadow-[0_0_10px_rgba(0,255,204,0.5)]"
-                initial={{ width: "0%" }}
-                animate={{ width: progressWidth }}
-                transition={{ duration: 1.5, ease: "easeInOut" }}
-              />
-              {steps.map((step) => {
-                const status = getStepStatus(step.id);
-                return (
-                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-3 sm:gap-4">
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-colors border
-                        ${status === "completed"
-                          ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400 backdrop-blur-md"
-                          : status === "active"
-                          ? "bg-blue-500 text-white border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-                          : status === "rejected"
-                          ? "bg-red-500/20 border-red-500/50 text-red-400"
-                          : "bg-black border-white/10 text-zinc-600"
-                        }`}
-                    >
-                      {status === "completed" ? (
-                        <CheckCircle2 className="w-4 h-4 sm:w-6 sm:h-6" />
-                      ) : status === "active" ? (
-                        <Clock className="w-4 h-4 sm:w-6 sm:h-6 animate-pulse" />
-                      ) : (
-                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-zinc-600" />
-                      )}
-                    </motion.div>
-                    <span className={`text-xs sm:text-sm font-medium tracking-wide ${
-                      status === "active" ? "text-white"
-                      : status === "completed" ? "text-cyan-400"
-                      : status === "rejected" ? "text-red-400"
-                      : "text-zinc-500"
-                    }`}>
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Event Date — 1 col */}
-          <motion.div
-            variants={bentoVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.2 }}
-            className="col-span-1 row-span-1 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-3xl p-8 flex flex-col justify-between"
-          >
-            <div className="flex justify-between items-start">
-              <div className="w-12 h-12 bg-cyan-400/20 rounded-xl flex items-center justify-center border border-cyan-400/30">
-                <Code className="w-6 h-6 text-cyan-400" />
+            <div className={`rounded-2xl border p-6 flex flex-col sm:flex-row items-start gap-5 relative z-10 backdrop-blur-sm ${
+              participant?.status === 'approved' 
+                ? 'bg-cyan-500/10 border-cyan-500/20' 
+                : participant?.status === 'rejected'
+                ? 'bg-red-500/10 border-red-500/20'
+                : 'bg-yellow-500/10 border-yellow-500/20'
+            }`}>
+              <div className={`mt-1 shrink-0 p-3 rounded-2xl ${
+                participant?.status === 'approved' 
+                  ? 'bg-cyan-500/20 text-cyan-400' 
+                  : participant?.status === 'rejected'
+                  ? 'bg-red-500/20 text-red-400'
+                  : 'bg-yellow-500/20 text-yellow-400'
+              }`}>
+                 {participant?.status === "approved" ? <CheckCircle2 className="w-6 h-6" /> : participant?.status === "rejected" ? <AlertCircle className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
               </div>
-              <span className="text-xs font-mono text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded">MAR 20–27</span>
-            </div>
-            <div>
-              <h3 className="text-3xl font-black mb-1">7<span className="text-lg font-medium text-zinc-400"> days</span></h3>
-              <p className="text-zinc-400 text-sm">Competition duration</p>
+              <div>
+                <p className={`text-lg font-bold mb-2 ${
+                  participant?.status === 'approved' ? 'text-cyan-400' : participant?.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'
+                }`}>
+                  {participant?.status === "approved"
+                    ? "Approved"
+                    : participant?.status === "rejected"
+                    ? "Not Accepted"
+                    : "Under Review"}
+                </p>
+                <p className="text-sm text-zinc-300 leading-relaxed max-w-2xl">
+                  {participant?.status === "approved"
+                    ? "Your application is approved. You can now continue with the competition dashboard actions."
+                    : participant?.status === "rejected"
+                    ? "Thank you for applying. Unfortunately your application was not accepted this time."
+                    : "Your application is currently under review. You will be notified once your application has been approved."}
+                </p>
+              </div>
             </div>
           </motion.div>
 
-          {/* Briefing Tile — 2 cols, 2 rows */}
+          {participant?.status === "approved" && (
+            <>
+              {/* Event Date — 1 col */}
+              <motion.div
+                variants={bentoVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: 0.2 }}
+                className="col-span-1 row-span-1 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-3xl p-8 flex flex-col justify-between"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="w-12 h-12 bg-cyan-400/20 rounded-xl flex items-center justify-center border border-cyan-400/30">
+                    <Code className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <span className="text-xs font-mono text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded">MAR 20–27</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black mb-1">7<span className="text-lg font-medium text-zinc-400"> days</span></h3>
+                  <p className="text-zinc-400 text-sm">Competition duration</p>
+                </div>
+              </motion.div>
+
+              {/* Briefing Tile — 2 cols, 2 rows */}
           <motion.div
             variants={bentoVariants}
             initial="hidden"
@@ -447,7 +405,7 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Submission Portal — only shown when submissions are open OR participant already submitted */}
+              {/* Submission Portal — only shown when submissions are open OR participant already submitted */}
           <AnimatePresence>
             {(eventState.submissionsOpen || submission) && (
               <motion.div
@@ -524,7 +482,7 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
 
-          {/* Results Tile — shown based on submission + results state */}
+              {/* Results Tile — shown based on submission + results state */}
           <AnimatePresence>
             {showResultsTile && (
               <motion.div
@@ -589,6 +547,8 @@ export default function DashboardPage() {
               </motion.div>
             )}
           </AnimatePresence>
+            </>
+          )}
 
         </div>
       </main>

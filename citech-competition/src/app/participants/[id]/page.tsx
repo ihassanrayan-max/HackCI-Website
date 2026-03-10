@@ -6,7 +6,6 @@ import {
   getMyParticipant,
   getParticipantById,
   checkIsAdmin,
-  type CompParticipant,
 } from "@/lib/db";
 import MagneticWrapper from "@/components/MagneticWrapper";
 
@@ -41,7 +40,6 @@ export default async function ParticipantProfilePage({
   if (!participant) notFound();
 
   const isAdmin = await checkIsAdmin(supabase);
-  const isSelf = me?.id === id;
 
   const showOptional = isAdmin;
   const universityDisplay =
@@ -80,14 +78,6 @@ export default async function ParticipantProfilePage({
               <h1 className="text-2xl md:text-3xl font-black tracking-tight">
                 {participant.full_name?.trim() || "Unknown"}
               </h1>
-              {isSelf && (
-                <Link
-                  href="/profile"
-                  className="inline-flex items-center gap-2 mt-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-                >
-                  Edit your profile
-                </Link>
-              )}
             </div>
           </div>
 

@@ -18,6 +18,7 @@ interface FormData {
   program: string;
   year: string;
   goals: string;
+  dietaryRestrictions: string;
   linkedin: string;
   github: string;
   portfolio: string;
@@ -31,6 +32,7 @@ const InputField = ({
   onChange,
   focusedField,
   setFocusedField,
+  placeholder,
   ...props
 }: any) => (
   <div className="relative group">
@@ -47,6 +49,7 @@ const InputField = ({
       id={id}
       name={name || id}
       {...props}
+      placeholder={focusedField === id ? placeholder : ""}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value)}
       onFocus={() => setFocusedField(id)}
@@ -84,6 +87,7 @@ export default function RegisterPage() {
 
   const [eventState, setEventState] = useState<EventState>(DEFAULT_EVENT_STATE);
   const [eventStateLoading, setEventStateLoading] = useState(true);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     age: "",
@@ -93,6 +97,7 @@ export default function RegisterPage() {
     program: "",
     year: "",
     goals: "",
+    dietaryRestrictions: "",
     linkedin: "",
     github: "",
     portfolio: "",
@@ -160,6 +165,33 @@ export default function RegisterPage() {
 
     try {
       const supabase = createClient();
+      if (!resumeFile) {
+        setSubmitError("Please upload your resume before submitting.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const ext = resumeFile.name.split(".").pop()?.toLowerCase();
+      if (ext !== "pdf" && ext !== "docx") {
+        setSubmitError("Resume must be a PDF file (DOCX is also accepted).");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const safeFileName = resumeFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const resumePath = `${authUserId}/${Date.now()}-${safeFileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("comp-resumes")
+        .upload(resumePath, resumeFile, { upsert: false });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Failed to upload resume.");
+      }
+
+      const {
+        data: { publicUrl: resumeUrl },
+      } = supabase.storage.from("comp-resumes").getPublicUrl(resumePath);
+
       await insertParticipant(supabase, {
         user_id: authUserId,
         email: authEmail,
@@ -171,9 +203,11 @@ export default function RegisterPage() {
         program: formData.program,
         year_of_study: formData.year,
         goals: formData.goals || null,
+        dietary_restrictions: formData.dietaryRestrictions || null,
         linkedin_url: formData.linkedin || null,
         github_url: formData.github || null,
         portfolio_url: formData.portfolio || null,
+        resume_url: resumeUrl || null,
       });
 
       setIsSubmitting(false);
@@ -215,7 +249,7 @@ export default function RegisterPage() {
           >
             <CheckCircle2 className="w-10 h-10 text-cyan-400" />
           </motion.div>
-          <h2 className="text-3xl font-black tracking-tighter">Registration Initialized</h2>
+          <h2 className="text-3xl font-black tracking-tighter">Application Submitted</h2>
           <p className="text-zinc-400">Redirecting to your dashboard...</p>
           <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
         </motion.div>
@@ -276,8 +310,8 @@ export default function RegisterPage() {
           className="max-w-xl w-full"
         >
           <div className="mb-12">
-            <h1 className="text-4xl font-bold tracking-tight mb-3">Complete Profile</h1>
-            <p className="text-zinc-400 text-lg">Tell us who you are.</p>
+            <h1 className="text-4xl font-bold tracking-tight mb-3">Application</h1>
+            <p className="text-zinc-400 text-lg">Submit your application for the CITech 2026 competition.</p>
           </div>
 
           {submitError && (
@@ -504,6 +538,18 @@ export default function RegisterPage() {
               </AnimatePresence>
             </div>
 
+            <InputField
+              label="Dietary Restrictions (optional)"
+              id="dietaryRestrictions"
+              name="dietaryRestrictions"
+              type="text"
+              value={formData.dietaryRestrictions}
+              placeholder="e.g., allergies, halal, vegetarian, none"
+              onChange={(v: string) => setFormData((d) => ({ ...d, dietaryRestrictions: v }))}
+              focusedField={focusedField}
+              setFocusedField={setFocusedField}
+            />
+
             {/* Optional links */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
               <InputField
@@ -540,6 +586,22 @@ export default function RegisterPage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                Resume Upload <span className="text-red-400">(Required)</span>
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                required
+                onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+                className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-black file:font-medium hover:file:bg-zinc-200"
+              />
+              <p className="text-xs text-zinc-500">
+                Accepted formats: PDF (required minimum), DOCX also accepted.
+              </p>
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -552,7 +614,7 @@ export default function RegisterPage() {
                   Processing...
                 </div>
               ) : (
-                "Initialize Registration"
+                "Submit Application"
               )}
             </button>
           </form>

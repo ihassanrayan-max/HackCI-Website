@@ -24,9 +24,11 @@ export interface CompParticipant {
   program: string;
   year_of_study: string;
   goals: string | null;
-   linkedin_url: string | null;
-   github_url: string | null;
-   portfolio_url: string | null;
+  dietary_restrictions: string | null;
+  linkedin_url: string | null;
+  github_url: string | null;
+  portfolio_url: string | null;
+  resume_url: string | null;
   status: ParticipantStatus;
   created_at: string;
   updated_at: string;
@@ -161,7 +163,7 @@ export async function getParticipantById(
 export async function updateMyParticipant(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
   participantId: string,
-  payload: Partial<Pick<CompParticipant, "full_name" | "age" | "university" | "university_name" | "student_id" | "program" | "year_of_study" | "goals" | "linkedin_url" | "github_url" | "portfolio_url">>
+  payload: Partial<Pick<CompParticipant, "full_name" | "age" | "university" | "university_name" | "student_id" | "program" | "year_of_study" | "goals" | "dietary_restrictions" | "linkedin_url" | "github_url" | "portfolio_url" | "resume_url">>
 ) {
   const { error } = await supabase
     .from("comp_participants")

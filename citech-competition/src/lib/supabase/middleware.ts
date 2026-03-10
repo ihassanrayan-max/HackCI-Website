@@ -46,7 +46,16 @@ export async function updateSession(request: NextRequest) {
   if (pathname === "/login" && user) {
     const url = request.nextUrl.clone();
     const { data: isAdmin } = await supabase.rpc("comp_is_admin");
-    url.pathname = isAdmin ? "/admin" : "/dashboard";
+    if (isAdmin) {
+      url.pathname = "/admin";
+    } else {
+      const { data: participant } = await supabase
+        .from("comp_participants")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      url.pathname = participant ? "/dashboard" : "/";
+    }
     return NextResponse.redirect(url);
   }
 

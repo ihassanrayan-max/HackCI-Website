@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, AlertCircle, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import MagneticWrapper from "@/components/MagneticWrapper";
 import { createClient } from "@/lib/supabase/client";
@@ -23,7 +23,6 @@ function GoogleIcon() {
 type AuthMode = "signin" | "signup";
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialModeParam = searchParams.get("mode");
   const [mode, setMode] = useState<AuthMode>(
@@ -67,11 +66,11 @@ function LoginContent() {
     // Route after sign-in
     const isAdmin = await checkIsAdmin(supabase);
     if (isAdmin) {
-      router.push("/admin");
+      window.location.href = "/admin";
       return;
     }
     const participant = await getMyParticipant(supabase);
-    router.push(participant ? "/dashboard" : "/register");
+    window.location.href = participant ? "/dashboard" : "/";
   };
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
@@ -106,13 +105,13 @@ function LoginContent() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const participant = await getMyParticipant(supabase);
-      router.push(participant ? "/dashboard" : "/register");
+      window.location.href = participant ? "/dashboard" : "/";
     } else {
       // Email confirmation required — show info
       setError(null);
       setIsLoading(false);
       // Reuse error state with a success message styling trick — instead redirect
-      router.push("/register");
+      window.location.href = "/";
     }
   };
 

@@ -178,7 +178,7 @@ export default function LandingPage() {
                       className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
                     >
                       <span className="sm:hidden">Register</span>
-                      <span className="hidden sm:inline">Complete Registration</span>
+                      <span className="hidden sm:inline">Apply Now</span>
                     </Link>
                   </MagneticWrapper>
                 )}
@@ -253,7 +253,7 @@ export default function LandingPage() {
                   href="/register"
                   className="interactive group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-full font-medium text-lg hover:bg-zinc-200 transition-all"
                 >
-                  Start Building
+                  Register Now
                   <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                 </Link>
               </MagneticWrapper>
@@ -301,7 +301,7 @@ export default function LandingPage() {
                       <div className="p-1 rounded-full bg-cyan-400/10">
                         <ChevronRight className="w-4 h-4 text-cyan-400" />
                       </div>
-                      Guaranteed Internship Interview
+                      Research interview opportunity with Dr. Hossam Gaber
                     </li>
                     <li className="flex items-center gap-3">
                       <div className="p-1 rounded-full bg-cyan-400/10">
@@ -329,7 +329,7 @@ export default function LandingPage() {
                       <div className="p-1 rounded-full bg-blue-400/10">
                         <ChevronRight className="w-4 h-4 text-blue-400" />
                       </div>
-                      Guaranteed Internship Interview
+                      Research interview opportunity with Dr. Hossam Gaber
                     </li>
                     <li className="flex items-center gap-3">
                       <div className="p-1 rounded-full bg-blue-400/10">

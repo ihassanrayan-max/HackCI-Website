@@ -65,7 +65,7 @@ function MemberCard({
 }) {
   const memberName = member.comp_participants?.full_name?.trim() || "Unknown Participant";
   const memberInitial = memberName.charAt(0).toUpperCase();
-  const profileHref = isMe ? "/profile" : `/participants/${member.participant_id}`;
+  const profileHref = `/participants/${member.participant_id}`;
 
   return (
     <motion.div
