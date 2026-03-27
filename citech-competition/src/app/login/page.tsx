@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import MagneticWrapper from "@/components/MagneticWrapper";
+import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
 import { checkIsAdmin, getMyParticipant } from "@/lib/db";
 
@@ -141,8 +142,8 @@ function LoginContent() {
           >
             <div className="w-48 h-48 border border-blue-500/20 rounded-full" />
           </motion.div>
-          <div className="absolute text-5xl font-black tracking-tighter mix-blend-overlay">
-            CITECH
+          <div className="absolute text-center text-2xl sm:text-3xl font-black tracking-tighter mix-blend-overlay max-w-[12rem] leading-tight">
+            COGNITIVE INNOVATION
           </div>
         </motion.div>
       </div>
@@ -166,9 +167,9 @@ function LoginContent() {
           className="w-full max-w-md mx-auto relative z-10"
         >
           <div className="mb-10">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 mb-8" />
+            <BrandLogo className="mb-8" markClassName="w-16 h-16 text-cyan-400" textClassName="text-3xl font-black tracking-tighter text-white" />
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
-              {mode === "signin" ? "Welcome Back." : "Join CITech."}
+              {mode === "signin" ? "Welcome Back." : "Join Cognitive Innovation Competition."}
             </h1>
             <p className="text-zinc-400 text-lg font-light">
               {mode === "signin"

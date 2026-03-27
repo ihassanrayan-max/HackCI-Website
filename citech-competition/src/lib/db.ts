@@ -101,6 +101,64 @@ export interface CompTeamWithCount extends CompTeam {
   owner_name: string;
 }
 
+// ─── Applicant display / CSV export (single source of truth) ───────────────────
+
+/** Human-readable university label for OTU vs other. */
+export function participantUniversityLabel(p: CompParticipant): string {
+  return p.university === "otu"
+    ? "Ontario Tech University"
+    : p.university_name ?? "Other";
+}
+
+/** Escape a single field for CSV (RFC 4180). */
+export function escapeCsvField(value: string | number | null | undefined): string {
+  const s = value == null ? "" : String(value);
+  if (/[",\r\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/** Column order for admin CSV export — aligned with registration / CompParticipant. */
+export const PARTICIPANT_CSV_HEADERS = [
+  "Name",
+  "Email",
+  "Age",
+  "University",
+  "Student ID",
+  "Program",
+  "Year of Study",
+  "Goals",
+  "Dietary Restrictions",
+  "LinkedIn",
+  "GitHub",
+  "Portfolio",
+  "Resume URL",
+  "Status",
+  "Registered At",
+] as const;
+
+/** Ordered values matching PARTICIPANT_CSV_HEADERS. */
+export function participantCsvRowValues(p: CompParticipant): (string | number)[] {
+  return [
+    p.full_name,
+    p.email,
+    p.age,
+    participantUniversityLabel(p),
+    p.student_id ?? "",
+    p.program,
+    p.year_of_study,
+    p.goals ?? "",
+    p.dietary_restrictions ?? "",
+    p.linkedin_url ?? "",
+    p.github_url ?? "",
+    p.portfolio_url ?? "",
+    p.resume_url ?? "",
+    p.status,
+    p.created_at,
+  ];
+}
+
 // ─── Participant helpers ───────────────────────────────────────────────────────
 
 export async function getMyParticipant(supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>) {
@@ -812,36 +870,9 @@ export async function adminGetJoinRequestsForTeam(
 }
 
 export function exportParticipantsCSV(participants: CompParticipant[]): string {
-  const headers = [
-    "Name",
-    "Email",
-    "Age",
-    "University",
-    "Student ID",
-    "Program",
-    "Year of Study",
-    "Goals",
-    "LinkedIn",
-    "GitHub",
-    "Portfolio",
-    "Status",
-    "Registered At",
-  ];
-  const rows = participants.map((p) => [
-    p.full_name,
-    p.email,
-    p.age,
-    p.university === "otu" ? "Ontario Tech University" : p.university_name ?? "Other",
-    p.student_id ?? "",
-    p.program,
-    p.year_of_study,
-    (p.goals ?? "").replace(/,/g, ";"),
-    p.linkedin_url ?? "",
-    p.github_url ?? "",
-    p.portfolio_url ?? "",
-    p.status,
-    p.created_at,
-  ]);
-
-  return [headers, ...rows].map((r) => r.join(",")).join("\n");
+  const headerLine = PARTICIPANT_CSV_HEADERS.map((h) => escapeCsvField(h)).join(",");
+  const lines = participants.map((p) =>
+    participantCsvRowValues(p).map(escapeCsvField).join(",")
+  );
+  return [headerLine, ...lines].join("\n");
 }

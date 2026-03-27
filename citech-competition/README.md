@@ -1,6 +1,6 @@
-# CITech Competition Portal
+# Cognitive Innovation Competition Portal
 
-A full-stack competition management platform for the **CITech 2026 week-long competition** (March 20–27, 2026). Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, and Supabase.
+A full-stack competition management platform for the **Cognitive Innovation Competition 2026** week-long event (April 2–9, 2026). Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, and Supabase.
 
 ## Features
 

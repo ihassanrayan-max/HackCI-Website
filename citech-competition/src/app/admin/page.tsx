@@ -30,6 +30,7 @@ import {
   UserPlus,
   UserMinus,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -47,6 +48,7 @@ import {
   upsertResult,
   clearResult,
   exportParticipantsCSV,
+  participantUniversityLabel,
   getAllTeamsAdmin,
   getUnassignedParticipants,
   adminAddMember,
@@ -264,6 +266,17 @@ function ResultDropdown({
 
 // ─── Participant Detail Slide-Over ──────────────────────────────────────────────
 
+/** Suggested filename for resume download from public storage URL. */
+function resumeFileNameFromUrl(url: string): string {
+  try {
+    const path = new URL(url).pathname.split("/").pop() ?? "resume";
+    const decoded = decodeURIComponent(path);
+    return decoded || "resume.pdf";
+  } catch {
+    return "resume.pdf";
+  }
+}
+
 function ParticipantDetail({
   participant,
   submission,
@@ -285,10 +298,7 @@ function ParticipantDetail({
     setBusy(false);
   };
 
-  const universityLabel =
-    participant.university === "otu"
-      ? "Ontario Tech University"
-      : participant.university_name ?? "Other";
+  const universityLabel = participantUniversityLabel(participant);
 
   return (
     <motion.div
@@ -392,17 +402,90 @@ function ParticipantDetail({
                 <p className="text-white font-medium">{new Date(participant.created_at).toLocaleDateString()}</p>
               </div>
             </div>
-            {participant.goals && (
-              <div>
-                <p className="text-zinc-500 text-xs mb-2">Goals</p>
-                <p className="text-zinc-300 text-sm leading-relaxed">{participant.goals}</p>
+          </div>
+
+          {/* Application (registration form) */}
+          <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-4">
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Application</h3>
+            <div>
+              <p className="text-zinc-500 text-xs mb-2">Goals</p>
+              <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+                {participant.goals?.trim() ? participant.goals : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-zinc-500 text-xs mb-2">Dietary restrictions</p>
+              <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+                {participant.dietary_restrictions?.trim() ? participant.dietary_restrictions : "—"}
+              </p>
+            </div>
+          </div>
+
+          {/* Professional links */}
+          <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-3">
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Links</h3>
+            <div className="space-y-2 text-sm">
+              {[
+                { label: "LinkedIn", url: participant.linkedin_url },
+                { label: "GitHub", url: participant.github_url },
+                { label: "Portfolio", url: participant.portfolio_url },
+              ].map(({ label, url }) => (
+                <div key={label} className="flex flex-col gap-0.5">
+                  <span className="text-zinc-500 text-xs">{label}</span>
+                  {url?.trim() ? (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium truncate"
+                    >
+                      {url}
+                    </a>
+                  ) : (
+                    <span className="text-zinc-600">Not provided</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Resume (uploaded at registration) */}
+          <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-3">
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5" />
+              Resume
+            </h3>
+            {participant.resume_url?.trim() ? (
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={participant.resume_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 text-sm font-medium transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 shrink-0" />
+                  Open / view
+                </a>
+                <a
+                  href={participant.resume_url}
+                  download={resumeFileNameFromUrl(participant.resume_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 text-sm font-medium transition-colors"
+                >
+                  <Download className="w-4 h-4 shrink-0" />
+                  Download
+                </a>
               </div>
+            ) : (
+              <p className="text-zinc-600 text-sm">No resume on file.</p>
             )}
           </div>
 
-          {/* Submission */}
+          {/* Hackathon submission (Drive) — separate from application resume */}
           <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-3">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Submission</h3>
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Hackathon submission</h3>
+            <p className="text-zinc-600 text-xs -mt-1">Project deliverable (Google Drive link), not the registration resume.</p>
             {submission ? (
               <div className="space-y-2">
                 <a

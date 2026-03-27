@@ -8,7 +8,7 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
-  --accent: #00ffcc; /* Neon cyan for CITech vibe */
+  --accent: #00ffcc; /* Neon cyan accent */
   --accent-dark: #00cc99;
 }
 

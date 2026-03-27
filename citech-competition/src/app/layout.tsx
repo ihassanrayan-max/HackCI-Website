@@ -15,8 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CITech Competition",
-  description: "A week-long competition hosted by CITech. March 20th to 27th, 2026.",
+  title: "Cognitive Innovation Competition",
+  description:
+    "A week-long competition hosted by Ciatek OT. April 2nd to 9th, 2026. Limited to engineering students.",
+  icons: {
+    icon: "/brand/icon.svg",
+    apple: "/brand/icon.svg",
+  },
 };
 
 export default function RootLayout({

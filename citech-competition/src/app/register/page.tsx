@@ -10,6 +10,17 @@ import { createClient } from "@/lib/supabase/client";
 import { insertParticipant, checkIsAdmin, getEventState } from "@/lib/db";
 import { DEFAULT_EVENT_STATE, mapEventState, type EventState } from "@/lib/eventState";
 
+/** Eligibility: program must indicate engineering (word or common abbreviations). */
+function isEngineeringProgram(program: string): boolean {
+  const p = program.trim();
+  if (!p) return false;
+  const lower = p.toLowerCase();
+  if (lower.includes("engineering")) return true;
+  if (/\beng\b/i.test(p)) return true;
+  if (/beng|meng/i.test(p)) return true;
+  return false;
+}
+
 interface FormData {
   age: string;
   university: string;
@@ -165,6 +176,14 @@ export default function RegisterPage() {
 
     try {
       const supabase = createClient();
+      if (!isEngineeringProgram(formData.program)) {
+        setSubmitError(
+          "You are not eligible to submit this application. This competition is limited to engineering students. Your program of study must include the word \"engineering\" or a recognized engineering abbreviation (e.g., Eng, BEng, MEng)."
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       if (!resumeFile) {
         setSubmitError("Please upload your resume before submitting.");
         setIsSubmitting(false);
@@ -263,7 +282,7 @@ export default function RegisterPage() {
         <div className="max-w-md w-full text-center space-y-6">
           <h1 className="text-3xl font-black tracking-tight">Applications Closed</h1>
           <p className="text-zinc-400 text-sm">
-            Participant registration for the CITech competition is now closed. If you already registered,
+            Participant registration for the Cognitive Innovation Competition is now closed. If you already registered,
             you can access your dashboard using the link in your confirmation email.
           </p>
           <div className="flex justify-center gap-3">
@@ -285,9 +304,9 @@ export default function RegisterPage() {
       <div className="hidden lg:flex w-5/12 relative overflow-hidden bg-zinc-950 items-center border-r border-white/5 p-12">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent pointer-events-none" />
         <div className="z-10">
-          <h1 className="text-[6vw] leading-[0.8] font-black tracking-tighter opacity-10">JOIN</h1>
-          <h1 className="text-[6vw] leading-[0.8] font-black tracking-tighter opacity-30">THE</h1>
-          <h1 className="text-[6vw] leading-[0.8] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">FUTURE</h1>
+          <h1 className="text-[6vw] leading-[0.8] font-black tracking-tighter opacity-10">START</h1>
+          <h1 className="text-[6vw] leading-[0.8] font-black tracking-tighter opacity-30">YOUR</h1>
+          <h1 className="text-[6vw] leading-[0.8] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">APPLICATION</h1>
         </div>
       </div>
 
@@ -311,7 +330,7 @@ export default function RegisterPage() {
         >
           <div className="mb-12">
             <h1 className="text-4xl font-bold tracking-tight mb-3">Application</h1>
-            <p className="text-zinc-400 text-lg">Submit your application for the CITech 2026 competition.</p>
+            <p className="text-zinc-400 text-lg">Submit your application for the Cognitive Innovation Competition 2026.</p>
           </div>
 
           {submitError && (
@@ -455,52 +474,57 @@ export default function RegisterPage() {
               )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <InputField
-                label="Program of Study"
-                id="program"
-                name="program"
-                type="text"
-                required
-                value={formData.program}
-                onChange={(v: string) => setFormData((d) => ({ ...d, program: v }))}
-                focusedField={focusedField}
-                setFocusedField={setFocusedField}
-              />
-              <div className="relative group">
-                <label className="absolute left-4 top-2 text-xs text-cyan-400 z-10 pointer-events-none">
-                  Year of Study
-                </label>
-                <select
-                  name="year"
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <InputField
+                  label="Program of Study"
+                  id="program"
+                  name="program"
+                  type="text"
                   required
-                  value={formData.year}
-                  onChange={(e) => setFormData((d) => ({ ...d, year: e.target.value }))}
-                  onFocus={() => setFocusedField("year")}
-                  onBlur={() => setFocusedField(null)}
-                  className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-4 pt-6 pb-2 text-white focus:outline-none focus:border-cyan-500 focus:bg-white/[0.04] transition-all appearance-none relative z-0"
-                >
-                  <option value="" className="bg-zinc-900"></option>
-                  <option value="1" className="bg-zinc-900">1st Year</option>
-                  <option value="2" className="bg-zinc-900">2nd Year</option>
-                  <option value="3" className="bg-zinc-900">3rd Year</option>
-                  <option value="4" className="bg-zinc-900">4th Year</option>
-                  <option value="5+" className="bg-zinc-900">5th Year+</option>
-                  <option value="grad" className="bg-zinc-900">Graduate</option>
-                </select>
-                <AnimatePresence>
-                  {focusedField === "year" && (
-                    <motion.div
-                      layoutId="focus-border"
-                      className="absolute inset-0 border border-cyan-400 rounded-2xl pointer-events-none shadow-[0_0_20px_rgba(0,255,204,0.1)]"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
-                </AnimatePresence>
+                  value={formData.program}
+                  onChange={(v: string) => setFormData((d) => ({ ...d, program: v }))}
+                  focusedField={focusedField}
+                  setFocusedField={setFocusedField}
+                />
+                <div className="relative group">
+                  <label className="absolute left-4 top-2 text-xs text-cyan-400 z-10 pointer-events-none">
+                    Year of Study
+                  </label>
+                  <select
+                    name="year"
+                    required
+                    value={formData.year}
+                    onChange={(e) => setFormData((d) => ({ ...d, year: e.target.value }))}
+                    onFocus={() => setFocusedField("year")}
+                    onBlur={() => setFocusedField(null)}
+                    className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-4 pt-6 pb-2 text-white focus:outline-none focus:border-cyan-500 focus:bg-white/[0.04] transition-all appearance-none relative z-0"
+                  >
+                    <option value="" className="bg-zinc-900"></option>
+                    <option value="1" className="bg-zinc-900">1st Year</option>
+                    <option value="2" className="bg-zinc-900">2nd Year</option>
+                    <option value="3" className="bg-zinc-900">3rd Year</option>
+                    <option value="4" className="bg-zinc-900">4th Year</option>
+                    <option value="5+" className="bg-zinc-900">5th Year+</option>
+                    <option value="grad" className="bg-zinc-900">Graduate</option>
+                  </select>
+                  <AnimatePresence>
+                    {focusedField === "year" && (
+                      <motion.div
+                        layoutId="focus-border"
+                        className="absolute inset-0 border border-cyan-400 rounded-2xl pointer-events-none shadow-[0_0_20px_rgba(0,255,204,0.1)]"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
+              <p className="text-xs text-zinc-500 px-1">
+                Engineering students only: your program must include &quot;engineering&quot; or a recognized abbreviation (e.g., Eng, BEng, MEng).
+              </p>
             </div>
 
             <div className="relative group">

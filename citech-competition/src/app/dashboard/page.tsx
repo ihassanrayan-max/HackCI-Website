@@ -8,7 +8,6 @@ import {
   Trophy,
   Users,
   LogOut,
-  Code,
   ChevronRight,
   BookOpen,
   Sparkles,
@@ -19,6 +18,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MagneticWrapper from "@/components/MagneticWrapper";
+import EventCountdown from "@/components/EventCountdown";
+import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
 import {
   getMyParticipant,
@@ -163,9 +164,11 @@ export default function DashboardPage() {
       {/* Top Navigation */}
       <nav className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="font-bold text-2xl tracking-tighter flex items-center gap-3 interactive group">
-            <div className="w-8 h-8 rounded-full bg-cyan-400 group-hover:scale-110 transition-transform" />
-            CITech Portal
+          <Link
+            href="/"
+            className="interactive group/logo"
+          >
+            <BrandLogo className="transition-transform group-hover/logo:scale-[1.03]" markClassName="w-10 h-10 text-cyan-400" textClassName="text-xl font-black tracking-tighter text-white" />
           </Link>
           <div className="flex items-center gap-4">
             <MagneticWrapper>
@@ -198,7 +201,7 @@ export default function DashboardPage() {
               {participant?.full_name?.split(" ")[0] ?? "Participant"}
             </span>
           </h1>
-          <p className="text-base sm:text-xl text-zinc-400 font-light">Your command center for the CITech 2026 competition.</p>
+          <p className="text-base sm:text-xl text-zinc-400 font-light">Your command center for the Cognitive Innovation Competition 2026.</p>
         </motion.div>
 
         {/* Status banner if pending/rejected */}
@@ -317,18 +320,9 @@ export default function DashboardPage() {
                 initial="hidden"
                 animate="visible"
                 transition={{ delay: 0.2 }}
-                className="col-span-1 row-span-1 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-3xl p-8 flex flex-col justify-between"
+                className="col-span-1 row-span-1 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-3xl p-8 flex flex-col"
               >
-                <div className="flex justify-between items-start">
-                  <div className="w-12 h-12 bg-cyan-400/20 rounded-xl flex items-center justify-center border border-cyan-400/30">
-                    <Code className="w-6 h-6 text-cyan-400" />
-                  </div>
-                  <span className="text-xs font-mono text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded">MAR 20–27</span>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black mb-1">7<span className="text-lg font-medium text-zinc-400"> days</span></h3>
-                  <p className="text-zinc-400 text-sm">Competition duration</p>
-                </div>
+                <EventCountdown />
               </motion.div>
 
               {/* Briefing Tile — 2 cols, 2 rows */}

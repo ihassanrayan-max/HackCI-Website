@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import TiltCard from "@/components/TiltCard";
 import Marquee from "@/components/Marquee";
 import MagneticWrapper from "@/components/MagneticWrapper";
+import LandingHeroCountdown from "@/components/LandingHeroCountdown";
+import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
 import { checkIsAdmin, getMyParticipant } from "@/lib/db";
 
@@ -120,9 +122,11 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 mix-blend-difference">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
           <MagneticWrapper>
-            <Link href="/" className="font-bold text-2xl tracking-tighter flex items-center gap-2 interactive">
-              <div className="w-8 h-8 rounded-full bg-cyan-400" />
-              CITech
+            <Link
+              href="/"
+              className="interactive group/logo"
+            >
+              <BrandLogo className="transition-transform group-hover/logo:scale-[1.03]" markClassName="w-12 h-12 text-cyan-400" textClassName="text-2xl font-black tracking-tighter text-white" />
             </Link>
           </MagneticWrapper>
 
@@ -222,14 +226,14 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.h1
-              className="text-[10vw] leading-[0.9] font-black tracking-tighter mb-8"
+              className="text-[8vw] sm:text-[7vw] md:text-[6vw] leading-[0.95] font-black tracking-tighter mb-8"
               initial={{ opacity: 0, clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0% 100%)" }}
               animate={{ opacity: 1, clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0% 100%)" }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             >
-              BUILD THE <br />
+              COGNITIVE INNOVATION <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500">
-                FUTURE.
+                COMPETITION.
               </span>
             </motion.h1>
 
@@ -239,7 +243,15 @@ export default function LandingPage() {
               variants={textVariants}
               className="text-xl md:text-3xl text-zinc-400 mb-12 max-w-2xl font-light"
             >
-              Join the premier week-long competition hosted by CITech. Compete, innovate, and secure your next internship.
+              Join the premier week-long competition hosted by CITech OTU. Compete, innovate, and secure your next interview.
+            </motion.p>
+            <motion.p
+              initial="hidden"
+              animate="visible"
+              variants={textVariants}
+              className="text-sm md:text-base text-zinc-500 mb-8 max-w-2xl font-medium border border-white/10 rounded-2xl px-4 py-3 bg-white/[0.03] backdrop-blur-sm"
+            >
+              Limited to engineering students. The competition runs April 2–9, 2026, including opening and closing ceremonies. Two tracks; winners may be invited to interview for a summer 2026 research role (May–August 2026).
             </motion.p>
 
             <motion.div
@@ -259,16 +271,18 @@ export default function LandingPage() {
               </MagneticWrapper>
               <div className="flex items-center gap-3 text-zinc-400 px-6 py-4 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
                 <Calendar className="w-5 h-5 text-cyan-400" />
-                <span className="font-mono text-sm tracking-wide">MAR 20 — 27, 2026</span>
+                <span className="font-mono text-sm tracking-wide">APR 2 — 9, 2026</span>
               </div>
             </motion.div>
+
+            <LandingHeroCountdown />
           </div>
         </div>
       </motion.main>
 
       {/* Infinite Marquee */}
       <div className="my-20">
-        <Marquee text="• CITECH COMPETITION 2026 " />
+        <Marquee text="• COGNITIVE INNOVATION COMPETITION 2026 " />
       </div>
 
       {/* Prizes Section (3D Tilt Cards) */}
@@ -282,7 +296,7 @@ export default function LandingPage() {
             className="mb-20"
           >
             <h2 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">Massive Prizes</h2>
-            <p className="text-2xl text-zinc-400 font-light">Two tracks. Endless possibilities.</p>
+            <p className="text-2xl text-zinc-400 font-light">Two tracks. Same prizes for each.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
@@ -297,17 +311,11 @@ export default function LandingPage() {
                     $400
                   </div>
                   <ul className="space-y-4 text-zinc-400 font-medium">
-                    <li className="flex items-center gap-3">
-                      <div className="p-1 rounded-full bg-cyan-400/10">
+                    <li className="flex items-start gap-3">
+                      <div className="p-1 rounded-full bg-cyan-400/10 mt-0.5">
                         <ChevronRight className="w-4 h-4 text-cyan-400" />
                       </div>
-                      Research interview opportunity with Dr. Hossam Gaber
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="p-1 rounded-full bg-cyan-400/10">
-                        <ChevronRight className="w-4 h-4 text-cyan-400" />
-                      </div>
-                      CITech Premium Swag Pack
+                      <span>Research interview opportunity with Dr. Hossam Gaber (potential summer 2026 research role, May–August 2026).</span>
                     </li>
                   </ul>
                 </TiltCard>
@@ -325,17 +333,11 @@ export default function LandingPage() {
                     $300
                   </div>
                   <ul className="space-y-4 text-zinc-400 font-medium">
-                    <li className="flex items-center gap-3">
-                      <div className="p-1 rounded-full bg-blue-400/10">
+                    <li className="flex items-start gap-3">
+                      <div className="p-1 rounded-full bg-blue-400/10 mt-0.5">
                         <ChevronRight className="w-4 h-4 text-blue-400" />
                       </div>
-                      Research interview opportunity with Dr. Hossam Gaber
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="p-1 rounded-full bg-blue-400/10">
-                        <ChevronRight className="w-4 h-4 text-blue-400" />
-                      </div>
-                      CITech Premium Swag Pack
+                      <span>Research interview opportunity with Dr. Hossam Gaber (potential summer 2026 research role, May–August 2026).</span>
                     </li>
                   </ul>
                 </TiltCard>
@@ -346,7 +348,7 @@ export default function LandingPage() {
       </div>
       
       <footer className="border-t border-white/10 py-12 text-center text-zinc-600 text-sm font-mono tracking-widest relative z-10 bg-black">
-        <p>© 2026 CITECH. ALL RIGHTS RESERVED.</p>
+        <p>© 2026 COGNITIVE INNOVATION COMPETITION. ALL RIGHTS RESERVED.</p>
       </footer>
     </div>
   );
