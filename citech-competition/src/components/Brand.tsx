@@ -1,30 +1,27 @@
 import React from "react";
 
-export function BrandMark({ className = "w-10 h-10 text-cyan-400", ...props }: React.SVGProps<SVGSVGElement>) {
+export function BrandMark({
+  className = "w-10 h-10 text-cyan-400",
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
-      {/* Outer C */}
-      <path d="M 68 20 A 34 34 0 1 0 68 80" stroke="currentColor" strokeWidth="14" strokeLinecap="butt" />
-      
-      {/* Circuit lines */}
-      <path d="M 28 36 L 36 36 L 44 26 L 52 26" stroke="currentColor" strokeWidth="3.5" strokeLinecap="square" strokeLinejoin="miter" />
-      <circle cx="56" cy="26" r="3.5" fill="currentColor" />
-      
-      <path d="M 24 50 L 46 50" stroke="currentColor" strokeWidth="3.5" strokeLinecap="square" />
-      <circle cx="51" cy="50" r="3.5" fill="currentColor" />
-      
-      <path d="M 28 64 L 36 64 L 44 74 L 52 74" stroke="currentColor" strokeWidth="3.5" strokeLinecap="square" strokeLinejoin="miter" />
-      <circle cx="56" cy="74" r="3.5" fill="currentColor" />
-
-      {/* The I segment */}
-      <rect x="90" y="20" width="8" height="60" fill="currentColor" />
-      
-      {/* Broken segments of I */}
-      <rect x="78" y="20" width="6" height="15" fill="currentColor" />
-      <rect x="78" y="41" width="6" height="6" fill="currentColor" />
-      <rect x="78" y="53" width="6" height="6" fill="currentColor" />
-      <rect x="78" y="65" width="6" height="15" fill="currentColor" />
-    </svg>
+    <div
+      role="img"
+      aria-label="CITech brand mark"
+      className={className}
+      style={{
+        backgroundColor: "currentColor",
+        WebkitMaskImage: "url(/brand/icon-white.svg)",
+        maskImage: "url(/brand/icon-white.svg)",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+      }}
+      {...props}
+    />
   );
 }
 
