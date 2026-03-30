@@ -36,17 +36,18 @@ export interface CompParticipant {
 
 export interface CompEventState {
   id: 1;
-  briefing_released: boolean;
-  submissions_open: boolean;
+  briefing_released_override: boolean | null;
+  submissions_open_override: boolean | null;
   results_released: boolean;
-  applications_open: boolean;
-  team_changes_open: boolean;
+  applications_open_override: boolean | null;
+  team_changes_open_override: boolean | null;
   updated_at: string;
 }
 
 export interface CompSubmission {
   id: string;
-  participant_id: string;
+  team_id: string;
+  submitted_by: string;
   drive_link: string;
   submitted_at: string;
   updated_at: string;
@@ -259,7 +260,7 @@ export async function getEventState(supabase: ReturnType<typeof import("@/lib/su
 
 export async function updateEventState(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
-  updates: Partial<Pick<CompEventState, "briefing_released" | "submissions_open" | "results_released" | "applications_open" | "team_changes_open">>
+  updates: Partial<Pick<CompEventState, "briefing_released_override" | "submissions_open_override" | "results_released" | "applications_open_override" | "team_changes_open_override">>
 ) {
   const { error } = await supabase
     .from("comp_event_state")
@@ -275,10 +276,18 @@ export async function getMySubmission(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
   participantId: string
 ) {
+  const { data: membership } = await supabase
+    .from("comp_team_members")
+    .select("team_id")
+    .eq("participant_id", participantId)
+    .maybeSingle();
+
+  if (!membership?.team_id) return null;
+
   const { data } = await supabase
     .from("comp_submissions")
     .select("*")
-    .eq("participant_id", participantId)
+    .eq("team_id", membership.team_id)
     .maybeSingle();
 
   return data as CompSubmission | null;
@@ -295,14 +304,20 @@ export async function getAllSubmissions(supabase: ReturnType<typeof import("@/li
 
 export async function upsertSubmission(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
-  participantId: string,
+  teamId: string,
+  submittedBy: string,
   driveLink: string
 ) {
   const { data, error } = await supabase
     .from("comp_submissions")
     .upsert(
-      { participant_id: participantId, drive_link: driveLink, submitted_at: new Date().toISOString() },
-      { onConflict: "participant_id" }
+      {
+        team_id: teamId,
+        submitted_by: submittedBy,
+        drive_link: driveLink,
+        submitted_at: new Date().toISOString(),
+      },
+      { onConflict: "team_id" }
     )
     .select()
     .single();
@@ -417,6 +432,32 @@ export async function getMyTeam(
     team: team as CompTeam,
     members: (members ?? []) as CompTeamMemberWithParticipant[],
   };
+}
+
+export async function getMyTeamForSubmission(
+  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
+  participantId: string
+): Promise<{ teamId: string; memberCount: number } | null> {
+  const data = await getMyTeam(supabase, participantId);
+  if (!data?.team) return null;
+
+  return {
+    teamId: data.team.id,
+    memberCount: data.members.length,
+  };
+}
+
+export async function hasSubmissionForTeam(
+  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
+  teamId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("comp_submissions")
+    .select("id")
+    .eq("team_id", teamId)
+    .maybeSingle();
+
+  return Boolean(data?.id);
 }
 
 export async function createTeam(

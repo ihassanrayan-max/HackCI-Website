@@ -68,7 +68,9 @@ import {
   type PositionType,
   type ParticipantStatus,
 } from "@/lib/db";
-import { mapEventState, DEFAULT_EVENT_STATE, type EventState, PRIZE_MAP } from "@/lib/eventState";
+import { mapAdminOverrides, mapEventState, DEFAULT_EVENT_STATE, type EventState, PRIZE_MAP } from "@/lib/eventState";
+import { type AdminOverrides } from "@/lib/eventLifecycle";
+import { SCHEDULE } from "@/lib/eventSchedule";
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -164,6 +166,75 @@ function ControlButton({
             )
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function OverrideControlButton({
+  icon: Icon,
+  label,
+  description,
+  overrideValue,
+  effectiveValue,
+  onSet,
+}: {
+  icon: React.ElementType;
+  label: string;
+  description: string;
+  overrideValue: boolean | null;
+  effectiveValue: boolean;
+  onSet: (value: boolean | null) => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  const run = async (value: boolean | null) => {
+    setBusy(true);
+    await onSet(value);
+    setBusy(false);
+  };
+
+  const stateText =
+    overrideValue === null
+      ? `AUTO (${effectiveValue ? "ON" : "OFF"})`
+      : overrideValue
+      ? "FORCED ON"
+      : "FORCED OFF";
+
+  const modeButton = (name: string, value: boolean | null) => (
+    <button
+      onClick={() => run(value)}
+      disabled={busy}
+      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 ${
+        overrideValue === value
+          ? "bg-white text-black border-white"
+          : "border-white/10 text-zinc-300 hover:bg-white/5"
+      }`}
+    >
+      {name}
+    </button>
+  );
+
+  return (
+    <div className="border rounded-2xl p-5 bg-white/[0.02] border-white/10">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-white/[0.03] border-white/10">
+            <Icon className="w-5 h-5 text-zinc-300" />
+          </div>
+          <div>
+            <p className="font-bold text-sm">{label}</p>
+            <p className="text-zinc-500 text-xs mt-0.5">{description}</p>
+          </div>
+        </div>
+        <span className="text-[10px] font-mono px-2 py-1 rounded border border-white/10 text-zinc-400">
+          {stateText}
+        </span>
+      </div>
+      <div className="mt-4 flex items-center gap-2">
+        {modeButton("Auto", null)}
+        {modeButton("Force ON", true)}
+        {modeButton("Force OFF", false)}
       </div>
     </div>
   );
@@ -656,7 +727,7 @@ function AdminTeamsTab({
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.02]">
                 <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">TEAM NAME</th>
-                <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">COMMANDER</th>
+                <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">OWNER</th>
                 <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">MEMBERS</th>
                 <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">RESULT</th>
                 <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest text-right">ACTIONS</th>
@@ -1047,7 +1118,7 @@ function AdminLoginScreen({ onSuccess }: { onSuccess: () => void }) {
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: username, password });
     if (signInError) {
-      setError("Invalid credentials. Access denied.");
+      setError("Invalid credentials. Please try again.");
       setIsLoading(false);
       return;
     }
@@ -1077,8 +1148,8 @@ function AdminLoginScreen({ onSuccess }: { onSuccess: () => void }) {
               <ShieldAlert className="w-8 h-8 text-red-500" />
             </div>
           </div>
-          <h1 className="text-3xl font-black tracking-tighter mb-2">OVERSEER</h1>
-          <p className="text-zinc-500 text-sm font-mono">RESTRICTED ACCESS — AUTHENTICATE</p>
+          <h1 className="text-3xl font-black tracking-tighter mb-2">Admin Panel</h1>
+          <p className="text-zinc-500 text-sm font-mono">Sign in to continue</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="relative">
@@ -1115,7 +1186,7 @@ function AdminLoginScreen({ onSuccess }: { onSuccess: () => void }) {
             )}
           </AnimatePresence>
           <button type="submit" disabled={isLoading} className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-colors flex items-center justify-center gap-3">
-            {isLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Authenticating...</> : <><Lock className="w-4 h-4" />Authenticate</>}
+            {isLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Signing in...</> : <><Lock className="w-4 h-4" />Sign In</>}
           </button>
         </form>
         <div className="mt-8 text-center">
@@ -1140,6 +1211,13 @@ export default function AdminDashboardPage() {
   const [results, setResults] = useState<CompResult[]>([]);
   const [submissions, setSubmissions] = useState<CompSubmission[]>([]);
   const [eventState, setLocalEventState] = useState<EventState>(DEFAULT_EVENT_STATE);
+  const [eventOverrides, setEventOverrides] = useState<AdminOverrides>({
+    applicationsOpenOverride: null,
+    briefingReleasedOverride: null,
+    submissionsOpenOverride: null,
+    teamChangesOpenOverride: null,
+    resultsReleased: false,
+  });
   const [dataLoading, setDataLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -1185,7 +1263,10 @@ export default function AdminDashboardPage() {
         getUnassignedParticipants(supabase).catch(() => []),
       ]);
       setParticipants(ps);
-      if (es) setLocalEventState(mapEventState(es));
+      if (es) {
+        setLocalEventState(mapEventState(es));
+        setEventOverrides(mapAdminOverrides(es));
+      }
       setResults(rs);
       setSubmissions(subs);
       setAdminTeams(teams);
@@ -1211,20 +1292,30 @@ export default function AdminDashboardPage() {
     setSelectedParticipant((sp) => sp?.id === id ? { ...sp, status } : sp);
   };
 
-  const handleToggleControl = async (
-    key: "briefing_released" | "submissions_open" | "results_released" | "applications_open" | "team_changes_open",
-    value: boolean
+  const reloadEventState = async () => {
+    const supabase = createClient();
+    const es = await getEventState(supabase);
+    setLocalEventState(mapEventState(es));
+    setEventOverrides(mapAdminOverrides(es));
+  };
+
+  const handleSetOverride = async (
+    key:
+      | "briefing_released_override"
+      | "submissions_open_override"
+      | "applications_open_override"
+      | "team_changes_open_override",
+    value: boolean | null
   ) => {
     const supabase = createClient();
     await updateEventState(supabase, { [key]: value });
-    setLocalEventState((s) => ({
-      ...s,
-      briefingReleased: key === "briefing_released" ? value : s.briefingReleased,
-      submissionsOpen: key === "submissions_open" ? value : s.submissionsOpen,
-      resultsReleased: key === "results_released" ? value : s.resultsReleased,
-      applicationsOpen: key === "applications_open" ? value : s.applicationsOpen,
-      teamChangesOpen: key === "team_changes_open" ? value : s.teamChangesOpen,
-    }));
+    await reloadEventState();
+  };
+
+  const handleSetResultsReleased = async (value: boolean) => {
+    const supabase = createClient();
+    await updateEventState(supabase, { results_released: value });
+    await reloadEventState();
   };
 
   const handleAssignResult = async (teamId: string, track: TrackType, position: PositionType) => {
@@ -1407,15 +1498,21 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const selectedSubmission = selectedParticipant
-    ? (submissions.find((s) => s.participant_id === selectedParticipant.id) ?? null)
-    : null;
   const selectedParticipantTeamId = selectedParticipant && adminTeams.length > 0
     ? (adminTeams.find((t) => t.members.some((m) => m.participant_id === selectedParticipant.id))?.team.id ?? null)
+    : null;
+  const selectedSubmission = selectedParticipantTeamId
+    ? (submissions.find((s) => s.team_id === selectedParticipantTeamId) ?? null)
     : null;
   const selectedResult = selectedParticipant && selectedParticipantTeamId
     ? (results.find((r) => r.team_id === selectedParticipantTeamId) ?? null)
     : null;
+
+  const hasOutOfOrderOverride = Boolean(
+    (!eventState.eventStarted && eventOverrides.briefingReleasedOverride === true) ||
+    (!eventState.eventStarted && eventOverrides.teamChangesOpenOverride === true) ||
+    (!eventState.eventStarted && eventOverrides.submissionsOpenOverride === true)
+  );
 
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-red-500/30">
@@ -1435,13 +1532,13 @@ export default function AdminDashboardPage() {
                 <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping" />
                 <ShieldAlert className="w-5 h-5 text-red-500 relative z-10" />
               </div>
-              <span className="font-black text-xl tracking-tighter uppercase text-white">OVERSEER</span>
+              <span className="font-black text-xl tracking-tighter uppercase text-white">Admin</span>
             </div>
           </div>
           <MagneticWrapper>
             <button onClick={handleLogout} className="interactive flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors text-sm font-medium">
               <Lock className="w-4 h-4" />
-              Lock Session
+              Sign Out
             </button>
           </MagneticWrapper>
         </div>
@@ -1452,14 +1549,14 @@ export default function AdminDashboardPage() {
         {/* Header & Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1 space-y-2">
-            <h1 className="text-4xl font-black tracking-tighter">System Data</h1>
-            <p className="text-zinc-400 font-mono text-sm">LIVE TELEMETRY STREAM</p>
+            <h1 className="text-4xl font-black tracking-tighter">Overview</h1>
+            <p className="text-zinc-400 font-mono text-sm">Live data</p>
           </div>
           <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { label: "TOTAL ENTITIES", value: stats.total, Icon: Users, color: "text-white", border: "border-white/10", bg: "bg-white/[0.02]" },
-              { label: "CLEARED", value: stats.approved, Icon: CheckCircle2, color: "text-green-400", border: "border-green-500/20", bg: "from-green-500/10 to-transparent" },
-              { label: "AWAITING REVIEW", value: stats.pending, Icon: Activity, color: "text-yellow-400", border: "border-yellow-500/20", bg: "from-yellow-500/10 to-transparent" },
+              { label: "TOTAL APPLICANTS", value: stats.total, Icon: Users, color: "text-white", border: "border-white/10", bg: "bg-white/[0.02]" },
+              { label: "APPROVED", value: stats.approved, Icon: CheckCircle2, color: "text-green-400", border: "border-green-500/20", bg: "from-green-500/10 to-transparent" },
+              { label: "PENDING", value: stats.pending, Icon: Activity, color: "text-yellow-400", border: "border-yellow-500/20", bg: "from-yellow-500/10 to-transparent" },
             ].map(({ label, value, Icon, color, border, bg }) => (
               <div key={label} className={`border ${border} rounded-2xl p-6 relative overflow-hidden group bg-gradient-to-br ${bg}`}>
                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -1479,51 +1576,61 @@ export default function AdminDashboardPage() {
             <h2 className="font-black text-lg uppercase tracking-wider">Event Controls</h2>
             <span className="text-xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-1 rounded">ADMIN ONLY</span>
           </div>
+          <div className="text-xs text-zinc-400 border border-white/10 rounded-2xl p-4 bg-black/30">
+            <div>Default lifecycle (EST / Oshawa):</div>
+            <div className="mt-1">
+              Applications close {SCHEDULE.APPLICATIONS_CLOSE.toLocaleString("en-CA", { timeZone: "America/Toronto" })};
+              event starts after opening ceremony {SCHEDULE.EVENT_START.toLocaleString("en-CA", { timeZone: "America/Toronto" })};
+              submissions window {SCHEDULE.SUBMISSIONS_OPEN.toLocaleString("en-CA", { timeZone: "America/Toronto" })} to{" "}
+              {SCHEDULE.SUBMISSIONS_CLOSE.toLocaleString("en-CA", { timeZone: "America/Toronto" })}.
+            </div>
+            {hasOutOfOrderOverride && (
+              <div className="mt-2 text-yellow-300">
+                Warning: one or more overrides are forcing lifecycle features before the scheduled event start.
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ControlButton
-              active={eventState.briefingReleased}
-              onActivate={() => handleToggleControl("briefing_released", true)}
-              onDeactivate={() => handleToggleControl("briefing_released", false)}
+            <OverrideControlButton
               icon={BookOpen}
               label="Release Briefing"
               description="Reveal tracks, themes & judging criteria to all participants"
-              color="cyan"
+              overrideValue={eventOverrides.briefingReleasedOverride}
+              effectiveValue={eventState.briefingReleased}
+              onSet={(value) => handleSetOverride("briefing_released_override", value)}
             />
-            <ControlButton
-              active={eventState.submissionsOpen}
-              onActivate={() => handleToggleControl("submissions_open", true)}
-              onDeactivate={() => handleToggleControl("submissions_open", false)}
+            <OverrideControlButton
               icon={Upload}
               label="Open Submissions"
               description="Allow participants to submit their Google Drive links"
-              color="blue"
+              overrideValue={eventOverrides.submissionsOpenOverride}
+              effectiveValue={eventState.submissionsOpen}
+              onSet={(value) => handleSetOverride("submissions_open_override", value)}
             />
             <ControlButton
               active={eventState.resultsReleased}
-              onActivate={() => handleToggleControl("results_released", true)}
-              onDeactivate={() => handleToggleControl("results_released", false)}
+              onActivate={() => handleSetResultsReleased(true)}
+              onDeactivate={() => handleSetResultsReleased(false)}
               icon={Trophy}
               label="Release Results"
               description="Publish assigned results to each participant's dashboard"
               color="yellow"
             />
-            <ControlButton
-              active={eventState.applicationsOpen}
-              onActivate={() => handleToggleControl("applications_open", true)}
-              onDeactivate={() => handleToggleControl("applications_open", false)}
+            <OverrideControlButton
               icon={Users}
               label="Applications Open"
               description="Control whether new participants can register for this competition"
-              color="cyan"
+              overrideValue={eventOverrides.applicationsOpenOverride}
+              effectiveValue={eventState.applicationsOpen}
+              onSet={(value) => handleSetOverride("applications_open_override", value)}
             />
-            <ControlButton
-              active={eventState.teamChangesOpen}
-              onActivate={() => handleToggleControl("team_changes_open", true)}
-              onDeactivate={() => handleToggleControl("team_changes_open", false)}
+            <OverrideControlButton
               icon={Activity}
               label="Team Changes"
               description="Freeze or unlock team creation, joining, leaving, and roster changes"
-              color="blue"
+              overrideValue={eventOverrides.teamChangesOpenOverride}
+              effectiveValue={eventState.teamChangesOpen}
+              onSet={(value) => handleSetOverride("team_changes_open_override", value)}
             />
           </div>
         </div>
@@ -1592,12 +1699,12 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/10 bg-white/[0.02]">
-                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">IDENTIFIER</th>
-                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">ORIGIN</th>
+                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">NAME</th>
+                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">UNIVERSITY</th>
                       <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">PROGRAM</th>
-                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">STATE</th>
+                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">STATUS</th>
                       <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest">RESULT</th>
-                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest text-right">DIRECTIVES</th>
+                      <th className="p-6 font-mono text-xs text-zinc-500 tracking-widest text-right">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1676,7 +1783,7 @@ export default function AdminDashboardPage() {
                       <Search className="w-6 h-6 text-zinc-600" />
                     </div>
                     <div className="text-xl font-bold mb-2">No Records Found</div>
-                    <div className="text-zinc-500 font-mono text-sm">ADJUST QUERY PARAMETERS</div>
+                    <div className="text-zinc-500 font-mono text-sm">Try adjusting your search filters</div>
                   </motion.div>
                 )}
               </div>

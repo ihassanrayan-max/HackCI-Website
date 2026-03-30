@@ -8,9 +8,6 @@ import {
   Trophy,
   Users,
   LogOut,
-  ChevronRight,
-  BookOpen,
-  Sparkles,
   Medal,
   AlertCircle,
 } from "lucide-react";
@@ -25,6 +22,7 @@ import {
   getMyParticipant,
   getMySubmission,
   getMyResult,
+  getMyTeamForSubmission,
   upsertSubmission,
   checkIsAdmin,
   type CompParticipant,
@@ -38,15 +36,6 @@ import {
   PRIZE_MAP,
 } from "@/lib/eventState";
 
-const BASIC_RULES = [
-  "All work must be original and created during the competition week",
-  "Teams may have up to 4 members",
-  "Submissions must include a public Google Drive link",
-  "Both tracks are open to all participants regardless of university",
-  "Judges' decisions are final",
-  "Code plagiarism results in immediate disqualification",
-];
-
 export default function DashboardPage() {
   const router = useRouter();
   const [participant, setParticipant] = useState<CompParticipant | null>(null);
@@ -59,6 +48,7 @@ export default function DashboardPage() {
   const [submissionLink, setSubmissionLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
+  const [teamContext, setTeamContext] = useState<{ teamId: string; memberCount: number } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -78,6 +68,9 @@ export default function DashboardPage() {
         .eq("id", 1)
         .single();
       if (es) setEventState(mapEventState(es));
+
+      const teamSummary = await getMyTeamForSubmission(supabase, p.id);
+      setTeamContext(teamSummary);
 
       const sub = await getMySubmission(supabase, p.id);
       if (sub) {
@@ -114,12 +107,25 @@ export default function DashboardPage() {
       return;
     }
     if (!participant) return;
+    if (!teamContext?.teamId) {
+      setSubmissionError("You must be in a team to submit.");
+      return;
+    }
+    if (teamContext.memberCount < 2) {
+      setSubmissionError("A valid team requires at least 2 members before submission.");
+      return;
+    }
     setSubmissionError("");
     setIsSubmitting(true);
 
     try {
       const supabase = createClient();
-      const sub = await upsertSubmission(supabase, participant.id, submissionLink);
+      const sub = await upsertSubmission(
+        supabase,
+        teamContext.teamId,
+        participant.id,
+        submissionLink
+      );
       setSubmission(sub);
     } catch (err: any) {
       setSubmissionError(err?.message ?? "Submission failed. Please try again.");
@@ -178,6 +184,9 @@ export default function DashboardPage() {
               >
                 <Users className="w-4 h-4" />
                 Team Hub
+                {!eventState.teamChangesOpen && (
+                  <span className="text-[10px] uppercase tracking-wide text-zinc-500">(Locked)</span>
+                )}
               </Link>
             </MagneticWrapper>
             <MagneticWrapper>
@@ -201,61 +210,8 @@ export default function DashboardPage() {
               {participant?.full_name?.split(" ")[0] ?? "Participant"}
             </span>
           </h1>
-          <p className="text-base sm:text-xl text-zinc-400 font-light">Your command center for the Cognitive Innovation Competition 2026.</p>
+          <p className="text-base sm:text-xl text-zinc-400 font-light">Your dashboard for the Cognitive Innovation Competition 2026.</p>
         </motion.div>
-
-        {/* Status banner if pending/rejected */}
-        {participant?.status === "pending" && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 flex items-center gap-3 px-5 py-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl text-yellow-400"
-          >
-            <Clock className="w-5 h-5 shrink-0" />
-            <div>
-              <p className="font-bold text-sm">Application Under Review</p>
-              <p className="text-xs text-yellow-400/70">You will be notified once your application is approved.</p>
-            </div>
-          </motion.div>
-        )}
-        {participant?.status === "rejected" && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 flex items-center gap-3 px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400"
-          >
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <div>
-              <p className="font-bold text-sm">Application Not Accepted</p>
-              <p className="text-xs text-red-400/70">Thank you for applying. Unfortunately your application was not accepted this time.</p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Global lock state indicators */}
-        <AnimatePresence>
-          {(!eventState.applicationsOpen || !eventState.teamChangesOpen) && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="mb-8 flex flex-wrap gap-3"
-            >
-              {!eventState.applicationsOpen && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-300">
-                  <Clock className="w-4 h-4 text-zinc-400" />
-                  <span>New applications are closed.</span>
-                </div>
-              )}
-              {!eventState.teamChangesOpen && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-300">
-                  <Users className="w-4 h-4 text-zinc-400" />
-                  <span>Team formation is locked. Your Team Hub is read-only.</span>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:auto-rows-[240px]">
 
@@ -325,80 +281,6 @@ export default function DashboardPage() {
                 <EventCountdown />
               </motion.div>
 
-              {/* Briefing Tile — 2 cols, 2 rows */}
-          <motion.div
-            variants={bentoVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.3 }}
-            className="md:col-span-2 row-span-2 bg-white/[0.02] border border-white/10 rounded-3xl p-8 relative overflow-hidden group flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
-                <BookOpen className="w-6 h-6 text-cyan-400" />
-                Briefing
-              </h2>
-            </div>
-
-            <div className="space-y-5 overflow-y-auto flex-1">
-              {/* Always visible: basic rules */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
-                <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Competition Rules</h3>
-                <ul className="space-y-2.5">
-                  {BASIC_RULES.map((rule, i) => (
-                    <li key={i} className="flex items-start gap-3 text-zinc-300 text-sm">
-                      <ChevronRight className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                      {rule}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Detailed briefing — only shown after admin releases; no placeholder shown otherwise */}
-              <AnimatePresence>
-                {eventState.briefingReleased && (
-                  <motion.div
-                    key="briefing-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-2xl p-5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-cyan-400" />
-                        <h3 className="text-base font-bold text-cyan-400">Track A — Product Innovation</h3>
-                      </div>
-                      <p className="text-zinc-300 text-sm leading-relaxed">
-                        Build a product or service that solves a real-world problem using technology. Focus on user experience, feasibility, and market potential. A 2-minute demo video is required.
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/5 border border-blue-500/20 rounded-2xl p-5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-blue-400" />
-                        <h3 className="text-base font-bold text-blue-400">Track B — Technical Excellence</h3>
-                      </div>
-                      <p className="text-zinc-300 text-sm leading-relaxed">
-                        Demonstrate deep technical mastery through a complex system, algorithm, or infrastructure solution. Emphasis on architecture, performance, and scalability.
-                      </p>
-                    </div>
-                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
-                      <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-3">Judging Criteria</h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        {[["Innovation", "30%"], ["Execution", "25%"], ["Impact", "25%"], ["Presentation", "20%"]].map(([label, pct]) => (
-                          <div key={label} className="flex justify-between items-center bg-white/[0.03] rounded-xl px-3 py-2">
-                            <span className="text-zinc-300">{label}</span>
-                            <span className="text-cyan-400 font-mono font-bold">{pct}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-
               {/* Submission Portal — only shown when submissions are open OR participant already submitted */}
           <AnimatePresence>
             {(eventState.submissionsOpen || submission) && (
@@ -428,7 +310,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-4 bg-green-500/10 border border-green-500/20 w-full p-4 rounded-2xl">
                       <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-green-400 font-medium truncate">Project successfully transmitted</p>
+                        <p className="text-sm text-green-400 font-medium truncate">Submission received successfully</p>
                         <p className="text-xs text-zinc-500 font-mono truncate">{submission.drive_link}</p>
                       </div>
                       {eventState.submissionsOpen && (
@@ -443,6 +325,16 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {(!teamContext?.teamId || teamContext.memberCount < 2) && (
+                      <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-yellow-200">
+                        {teamContext?.teamId
+                          ? "You need at least 2 team members to submit. Use Team Hub to finalize your team."
+                          : "You must join or create a team before submitting."}{" "}
+                        <Link href="/team" className="underline text-yellow-100">
+                          Open Team Hub
+                        </Link>
+                      </div>
+                    )}
                     <form onSubmit={handleSubmission} className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="url"
@@ -454,7 +346,7 @@ export default function DashboardPage() {
                       />
                       <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !teamContext?.teamId || teamContext.memberCount < 2}
                         className="interactive flex items-center justify-center gap-2 bg-white text-black font-bold px-6 py-3.5 sm:py-0 rounded-2xl hover:bg-cyan-400 hover:scale-105 transition-all text-sm shrink-0 disabled:opacity-50"
                       >
                         {isSubmitting ? (

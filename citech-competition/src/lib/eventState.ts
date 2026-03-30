@@ -1,10 +1,9 @@
 /**
  * Event state helpers — backed by Supabase comp_event_state table.
- * The dashboard subscribes to realtime changes; the admin writes updates.
- *
- * Exports the same TypeScript interfaces as the old localStorage version
- * so pages need minimal changes.
+ * The UI consumes computed "effective state" (schedule + admin overrides).
  */
+
+import { computeEffectiveState, type AdminOverrides, type EffectiveEventState } from "@/lib/eventLifecycle";
 
 export type TrackType = "A" | "B";
 export type PositionType = 1 | 2;
@@ -14,12 +13,14 @@ export interface ParticipantResult {
   position: PositionType;
 }
 
-export interface EventState {
-  briefingReleased: boolean;
-  submissionsOpen: boolean;
-  resultsReleased: boolean;
-  applicationsOpen: boolean;
-  teamChangesOpen: boolean;
+export type EventState = EffectiveEventState;
+
+export interface EventStateRow {
+  briefing_released_override: boolean | null;
+  submissions_open_override: boolean | null;
+  results_released: boolean;
+  applications_open_override: boolean | null;
+  team_changes_open_override: boolean | null;
 }
 
 export const PRIZE_MAP: Record<PositionType, string> = {
@@ -27,27 +28,27 @@ export const PRIZE_MAP: Record<PositionType, string> = {
   2: "$300 + Internship Interview",
 };
 
-/** Map DB snake_case → camelCase for component consumption */
-export function mapEventState(row: {
-  briefing_released: boolean;
-  submissions_open: boolean;
-  results_released: boolean;
-  applications_open: boolean;
-  team_changes_open: boolean;
-}): EventState {
+/** Map DB row to explicit admin overrides. */
+export function mapAdminOverrides(row: EventStateRow): AdminOverrides {
   return {
-    briefingReleased: row.briefing_released,
-    submissionsOpen: row.submissions_open,
+    applicationsOpenOverride: row.applications_open_override,
+    briefingReleasedOverride: row.briefing_released_override,
+    submissionsOpenOverride: row.submissions_open_override,
+    teamChangesOpenOverride: row.team_changes_open_override,
     resultsReleased: row.results_released,
-    applicationsOpen: row.applications_open,
-    teamChangesOpen: row.team_changes_open,
   };
 }
 
+/** Map DB row to effective lifecycle state for participant-facing behavior. */
+export function mapEventState(row: EventStateRow, now: Date = new Date()): EventState {
+  return computeEffectiveState(now, mapAdminOverrides(row));
+}
+
 export const DEFAULT_EVENT_STATE: EventState = {
+  applicationsOpen: false,
+  eventStarted: false,
   briefingReleased: false,
   submissionsOpen: false,
   resultsReleased: false,
-  applicationsOpen: true,
-  teamChangesOpen: true,
+  teamChangesOpen: false,
 };

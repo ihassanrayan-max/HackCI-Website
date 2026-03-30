@@ -11,7 +11,8 @@ import MagneticWrapper from "@/components/MagneticWrapper";
 import LandingHeroCountdown from "@/components/LandingHeroCountdown";
 import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
-import { checkIsAdmin, getMyParticipant } from "@/lib/db";
+import { checkIsAdmin, getEventState, getMyParticipant } from "@/lib/db";
+import { mapEventState } from "@/lib/eventState";
 
 interface NavAuthState {
   loading: boolean;
@@ -39,10 +40,17 @@ export default function LandingPage() {
     isRegistered: false,
     initials: null,
   });
+  const [applicationsOpen, setApplicationsOpen] = useState(false);
 
   useEffect(() => {
     const loadAuth = async () => {
       const supabase = createClient();
+      try {
+        const eventState = await getEventState(supabase);
+        setApplicationsOpen(mapEventState(eventState).applicationsOpen);
+      } catch {
+        setApplicationsOpen(false);
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setAuthState({
@@ -141,15 +149,17 @@ export default function LandingPage() {
                     Sign In
                   </Link>
                 </MagneticWrapper>
-                <MagneticWrapper>
-                  <Link
-                    href="/login?mode=signup"
-                    className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
-                  >
-                    <span className="sm:hidden">Register</span>
-                    <span className="hidden sm:inline">Register Now</span>
-                  </Link>
-                </MagneticWrapper>
+                {applicationsOpen && (
+                  <MagneticWrapper>
+                    <Link
+                      href="/login?mode=signup"
+                      className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
+                    >
+                      <span className="sm:hidden">Register</span>
+                      <span className="hidden sm:inline">Register Now</span>
+                    </Link>
+                  </MagneticWrapper>
+                )}
               </>
             )}
 
@@ -176,15 +186,17 @@ export default function LandingPage() {
                     </Link>
                   </MagneticWrapper>
                 ) : (
-                  <MagneticWrapper>
-                    <Link
-                      href="/register"
-                      className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
-                    >
-                      <span className="sm:hidden">Register</span>
-                      <span className="hidden sm:inline">Apply Now</span>
-                    </Link>
-                  </MagneticWrapper>
+                  applicationsOpen && (
+                    <MagneticWrapper>
+                      <Link
+                        href="/register"
+                        className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
+                      >
+                        <span className="sm:hidden">Register</span>
+                        <span className="hidden sm:inline">Apply Now</span>
+                      </Link>
+                    </MagneticWrapper>
+                  )
                 )}
 
                 {/* User chip + sign out */}
@@ -196,10 +208,10 @@ export default function LandingPage() {
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="hidden sm:inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border border-white/20 hover:bg-white/10 transition-colors"
+                    className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border border-white/20 hover:bg-white/10 transition-colors"
                   >
                     <LogOut className="w-3 h-3" />
-                    Sign Out
+                    <span className="hidden sm:inline">Sign Out</span>
                   </button>
                 </div>
               </>
@@ -216,13 +228,23 @@ export default function LandingPage() {
               initial="hidden"
               animate="visible"
               variants={textVariants}
-              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-cyan-400 mb-12 backdrop-blur-md"
+              className={`inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm mb-12 backdrop-blur-md ${
+                applicationsOpen ? "text-cyan-400" : "text-zinc-300"
+              }`}
             >
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                <span
+                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    applicationsOpen ? "bg-cyan-400" : "bg-zinc-400"
+                  }`}
+                />
+                <span
+                  className={`relative inline-flex rounded-full h-2 w-2 ${
+                    applicationsOpen ? "bg-cyan-500" : "bg-zinc-400"
+                  }`}
+                />
               </span>
-              Registration Open for 2026
+              {applicationsOpen ? "Registration Open for 2026" : "Applications Closed for 2026"}
             </motion.div>
 
             <motion.h1
@@ -260,15 +282,17 @@ export default function LandingPage() {
               variants={textVariants}
               className="flex flex-col sm:flex-row items-center gap-6"
             >
-              <MagneticWrapper>
-                <Link
-                  href="/register"
-                  className="interactive group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-full font-medium text-lg hover:bg-zinc-200 transition-all"
-                >
-                  Register Now
-                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                </Link>
-              </MagneticWrapper>
+              {applicationsOpen && (
+                <MagneticWrapper>
+                  <Link
+                    href="/register"
+                    className="interactive group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-full font-medium text-lg hover:bg-zinc-200 transition-all"
+                  >
+                    Register Now
+                    <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                  </Link>
+                </MagneticWrapper>
+              )}
               <div className="flex items-center gap-3 text-zinc-400 px-6 py-4 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
                 <Calendar className="w-5 h-5 text-cyan-400" />
                 <span className="font-mono text-sm tracking-wide">APR 2 — 9, 2026</span>
@@ -307,7 +331,7 @@ export default function LandingPage() {
                     <Trophy className="w-8 h-8 text-cyan-400" />
                   </div>
                   <h3 className="text-3xl font-bold mb-2">1st Position</h3>
-                  <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600 mb-8 tracking-tighter">
+                  <div className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600 mb-8 tracking-tighter">
                     $400
                   </div>
                   <ul className="space-y-4 text-zinc-400 font-medium">
@@ -329,7 +353,7 @@ export default function LandingPage() {
                     <Code className="w-8 h-8 text-blue-400" />
                   </div>
                   <h3 className="text-3xl font-bold mb-2">2nd Position</h3>
-                  <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600 mb-8 tracking-tighter">
+                  <div className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600 mb-8 tracking-tighter">
                     $300
                   </div>
                   <ul className="space-y-4 text-zinc-400 font-medium">
