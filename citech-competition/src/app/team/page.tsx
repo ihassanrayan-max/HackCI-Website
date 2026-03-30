@@ -33,7 +33,6 @@ import {
   getTeamMembers,
   getAllTeams,
   getMyPendingRequests,
-  hasSubmissionForTeam,
   requestToJoinTeam,
   getJoinRequestsForTeam,
   approveJoinRequest,
@@ -281,13 +280,11 @@ export default function TeamHubPage() {
   const renameRef = useRef<HTMLInputElement>(null);
 
   const [eventState, setEventState] = useState<EventState>(DEFAULT_EVENT_STATE);
-  const [teamHasSubmission, setTeamHasSubmission] = useState(false);
 
   const isOwner = !!(team && participant && team.owner_id === participant.id);
   const emptySlots = Math.max(0, 4 - members.length);
   const notApproved = participant?.status !== "approved";
   const teamChangesLocked = !eventState.teamChangesOpen;
-  const teamCompositionLocked = teamChangesLocked || teamHasSubmission;
 
   // ── Load initial data ─────────────────────────────────────────────────────
 
@@ -312,14 +309,12 @@ export default function TeamHubPage() {
           setTeam(teamData.team);
           setMembers(teamData.members);
           setRenameInput(teamData.team.name);
-          setTeamHasSubmission(await hasSubmissionForTeam(supabase, teamData.team.id));
 
           if (teamData.team.owner_id === p.id) {
             const reqs = await getJoinRequestsForTeam(supabase, teamData.team.id);
             setJoinRequests(reqs);
           }
         } else {
-          setTeamHasSubmission(false);
           const [teams, pending] = await Promise.all([
             getAllTeams(supabase),
             getMyPendingRequests(supabase, p.id),
@@ -385,18 +380,6 @@ export default function TeamHubPage() {
           }
         }
       )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "comp_submissions",
-          filter: `team_id=eq.${team.id}`,
-        },
-        async () => {
-          setTeamHasSubmission(await hasSubmissionForTeam(supabase, team.id));
-        }
-      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -424,6 +407,12 @@ export default function TeamHubPage() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  useEffect(() => {
+    if (!loading && teamChangesLocked) {
+      router.push("/dashboard");
+    }
+  }, [loading, teamChangesLocked, router]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -471,12 +460,8 @@ export default function TeamHubPage() {
 
   const handleApproveRequest = async (request: CompJoinRequestWithParticipant) => {
     if (!team) return;
-    if (teamCompositionLocked) {
-      setActionError(
-        teamHasSubmission
-          ? "Team composition is locked because your team has already submitted."
-          : "Team forming has been locked by the organisers."
-      );
+    if (teamChangesLocked) {
+      setActionError("Team forming has been locked by the organisers.");
       return;
     }
     setBusy(true);
@@ -509,15 +494,7 @@ export default function TeamHubPage() {
   };
 
   const handleDisband = async () => {
-    if (!team) return;
-    if (teamCompositionLocked) {
-      setActionError(
-        teamHasSubmission
-          ? "You cannot disband a team after submission."
-          : "Team forming has been locked by the organisers."
-      );
-      return;
-    }
+    if (!team || teamChangesLocked) return;
     setBusy(true);
     clearError();
     try {
@@ -534,15 +511,7 @@ export default function TeamHubPage() {
   };
 
   const handleLeave = async () => {
-    if (!participant) return;
-    if (teamCompositionLocked) {
-      setActionError(
-        teamHasSubmission
-          ? "You cannot leave a team after submission."
-          : "Team forming has been locked by the organisers."
-      );
-      return;
-    }
+    if (!participant || teamChangesLocked) return;
     setBusy(true);
     clearError();
     try {
@@ -558,14 +527,7 @@ export default function TeamHubPage() {
   };
 
   const handleKickMember = async (memberParticipantId: string) => {
-    if (teamCompositionLocked) {
-      setActionError(
-        teamHasSubmission
-          ? "Team composition is locked after submission."
-          : "Team forming has been locked by the organisers."
-      );
-      return;
-    }
+    if (teamChangesLocked) return;
     setBusy(true);
     clearError();
     try {
@@ -608,6 +570,14 @@ export default function TeamHubPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (teamChangesLocked) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
@@ -694,42 +664,6 @@ export default function TeamHubPage() {
                 )}
               </AnimatePresence>
 
-              <AnimatePresence>
-                {teamChangesLocked && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 flex items-start gap-4 px-6 py-5 bg-zinc-500/8 border border-zinc-500/20 rounded-2xl text-zinc-300"
-                  >
-                    <Clock className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-sm mb-0.5">Team Changes Locked</p>
-                      <p className="text-xs text-zinc-400">
-                        TeamHub is now read-only for participants. Organisers can still make manual exceptions.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {teamHasSubmission && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 flex items-start gap-4 px-6 py-5 bg-cyan-500/8 border border-cyan-500/25 rounded-2xl text-cyan-200"
-                  >
-                    <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-sm mb-0.5">Submission Recorded</p>
-                      <p className="text-xs text-cyan-100/80">
-                        Team composition is locked because your team has already submitted.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
         <AnimatePresence mode="wait">
           {/* ── No team: Create + Browse ── */}
           {!team ? (
@@ -742,7 +676,7 @@ export default function TeamHubPage() {
               className="space-y-10"
             >
               {/* Create Card */}
-              <div className={`bg-white/[0.02] border border-white/10 rounded-[2rem] p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden group transition-opacity max-w-lg mx-auto ${(notApproved || teamCompositionLocked) ? "opacity-50 pointer-events-none" : ""}`}>
+              <div className={`bg-white/[0.02] border border-white/10 rounded-[2rem] p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden group transition-opacity max-w-lg mx-auto ${(notApproved || teamChangesLocked) ? "opacity-50 pointer-events-none" : ""}`}>
                 <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="w-20 h-20 bg-cyan-400/10 rounded-3xl flex items-center justify-center mb-8 border border-cyan-400/20 rotate-[-8deg] group-hover:rotate-0 transition-transform duration-500">
                   <Users className="w-10 h-10 text-cyan-400" />
@@ -825,7 +759,7 @@ export default function TeamHubPage() {
                         key={t.id}
                         team={t}
                         isPending={pendingTeamIds.has(t.id)}
-                        disabled={notApproved || teamCompositionLocked}
+                        disabled={notApproved || teamChangesLocked}
                         onRequest={() => handleRequestToJoin(t.id)}
                         busy={busy}
                       />
@@ -928,7 +862,7 @@ export default function TeamHubPage() {
                         member={member}
                         isMe={member.participant_id === participant?.id}
                         isOwner={team.owner_id === member.participant_id}
-                            canKick={isOwner && !teamCompositionLocked}
+                        canKick={isOwner}
                         onKick={() => handleKickMember(member.participant_id)}
                         busy={busy}
                       />

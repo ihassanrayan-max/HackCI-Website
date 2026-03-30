@@ -11,8 +11,7 @@ import MagneticWrapper from "@/components/MagneticWrapper";
 import LandingHeroCountdown from "@/components/LandingHeroCountdown";
 import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
-import { checkIsAdmin, getEventState, getMyParticipant } from "@/lib/db";
-import { mapEventState } from "@/lib/eventState";
+import { checkIsAdmin, getMyParticipant } from "@/lib/db";
 
 interface NavAuthState {
   loading: boolean;
@@ -40,16 +39,18 @@ export default function LandingPage() {
     isRegistered: false,
     initials: null,
   });
-  const [applicationsOpen, setApplicationsOpen] = useState(false);
+  const [applicationsOpen, setApplicationsOpen] = useState(true);
 
   useEffect(() => {
     const loadAuth = async () => {
       const supabase = createClient();
-      try {
-        const eventState = await getEventState(supabase);
-        setApplicationsOpen(mapEventState(eventState).applicationsOpen);
-      } catch {
-        setApplicationsOpen(false);
+      const { data: eventState } = await supabase
+        .from("comp_event_state")
+        .select("applications_open")
+        .eq("id", 1)
+        .single();
+      if (typeof eventState?.applications_open === "boolean") {
+        setApplicationsOpen(eventState.applications_open);
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -149,17 +150,15 @@ export default function LandingPage() {
                     Sign In
                   </Link>
                 </MagneticWrapper>
-                {applicationsOpen && (
-                  <MagneticWrapper>
-                    <Link
-                      href="/login?mode=signup"
-                      className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
-                    >
-                      <span className="sm:hidden">Register</span>
-                      <span className="hidden sm:inline">Register Now</span>
-                    </Link>
-                  </MagneticWrapper>
-                )}
+                <MagneticWrapper>
+                  <Link
+                    href="/login?mode=signup"
+                    className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
+                  >
+                    <span className="sm:hidden">Register</span>
+                    <span className="hidden sm:inline">Register Now</span>
+                  </Link>
+                </MagneticWrapper>
               </>
             )}
 
@@ -186,17 +185,15 @@ export default function LandingPage() {
                     </Link>
                   </MagneticWrapper>
                 ) : (
-                  applicationsOpen && (
-                    <MagneticWrapper>
-                      <Link
-                        href="/register"
-                        className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
-                      >
-                        <span className="sm:hidden">Register</span>
-                        <span className="hidden sm:inline">Apply Now</span>
-                      </Link>
-                    </MagneticWrapper>
-                  )
+                  <MagneticWrapper>
+                    <Link
+                      href="/register"
+                      className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
+                    >
+                      <span className="sm:hidden">Register</span>
+                      <span className="hidden sm:inline">Apply Now</span>
+                    </Link>
+                  </MagneticWrapper>
                 )}
 
                 {/* User chip + sign out */}
@@ -282,17 +279,15 @@ export default function LandingPage() {
               variants={textVariants}
               className="flex flex-col sm:flex-row items-center gap-6"
             >
-              {applicationsOpen && (
-                <MagneticWrapper>
-                  <Link
-                    href="/register"
-                    className="interactive group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-full font-medium text-lg hover:bg-zinc-200 transition-all"
-                  >
-                    Register Now
-                    <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                  </Link>
-                </MagneticWrapper>
-              )}
+              <MagneticWrapper>
+                <Link
+                  href="/register"
+                  className="interactive group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-full font-medium text-lg hover:bg-zinc-200 transition-all"
+                >
+                  Register Now
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                </Link>
+              </MagneticWrapper>
               <div className="flex items-center gap-3 text-zinc-400 px-6 py-4 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
                 <Calendar className="w-5 h-5 text-cyan-400" />
                 <span className="font-mono text-sm tracking-wide">APR 2 — 9, 2026</span>

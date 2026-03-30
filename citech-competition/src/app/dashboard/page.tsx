@@ -22,7 +22,6 @@ import {
   getMyParticipant,
   getMySubmission,
   getMyResult,
-  getMyTeamForSubmission,
   upsertSubmission,
   checkIsAdmin,
   type CompParticipant,
@@ -48,7 +47,6 @@ export default function DashboardPage() {
   const [submissionLink, setSubmissionLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
-  const [teamContext, setTeamContext] = useState<{ teamId: string; memberCount: number } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,9 +66,6 @@ export default function DashboardPage() {
         .eq("id", 1)
         .single();
       if (es) setEventState(mapEventState(es));
-
-      const teamSummary = await getMyTeamForSubmission(supabase, p.id);
-      setTeamContext(teamSummary);
 
       const sub = await getMySubmission(supabase, p.id);
       if (sub) {
@@ -107,25 +102,12 @@ export default function DashboardPage() {
       return;
     }
     if (!participant) return;
-    if (!teamContext?.teamId) {
-      setSubmissionError("You must be in a team to submit.");
-      return;
-    }
-    if (teamContext.memberCount < 2) {
-      setSubmissionError("A valid team requires at least 2 members before submission.");
-      return;
-    }
     setSubmissionError("");
     setIsSubmitting(true);
 
     try {
       const supabase = createClient();
-      const sub = await upsertSubmission(
-        supabase,
-        teamContext.teamId,
-        participant.id,
-        submissionLink
-      );
+      const sub = await upsertSubmission(supabase, participant.id, submissionLink);
       setSubmission(sub);
     } catch (err: any) {
       setSubmissionError(err?.message ?? "Submission failed. Please try again.");
@@ -177,18 +159,17 @@ export default function DashboardPage() {
             <BrandLogo className="transition-transform group-hover/logo:scale-[1.03]" markClassName="w-10 h-10 text-cyan-400" textClassName="text-xl font-black tracking-tighter text-white" />
           </Link>
           <div className="flex items-center gap-4">
-            <MagneticWrapper>
-              <Link
-                href="/team"
-                className="interactive px-5 py-2.5 rounded-full border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <Users className="w-4 h-4" />
-                Team Hub
-                {!eventState.teamChangesOpen && (
-                  <span className="text-[10px] uppercase tracking-wide text-zinc-500">(Locked)</span>
-                )}
-              </Link>
-            </MagneticWrapper>
+            {eventState.teamChangesOpen && (
+              <MagneticWrapper>
+                <Link
+                  href="/team"
+                  className="interactive px-5 py-2.5 rounded-full border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <Users className="w-4 h-4" />
+                  Team Hub
+                </Link>
+              </MagneticWrapper>
+            )}
             <MagneticWrapper>
               <button
                 onClick={handleSignOut}
@@ -325,16 +306,6 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(!teamContext?.teamId || teamContext.memberCount < 2) && (
-                      <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-yellow-200">
-                        {teamContext?.teamId
-                          ? "You need at least 2 team members to submit. Use Team Hub to finalize your team."
-                          : "You must join or create a team before submitting."}{" "}
-                        <Link href="/team" className="underline text-yellow-100">
-                          Open Team Hub
-                        </Link>
-                      </div>
-                    )}
                     <form onSubmit={handleSubmission} className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="url"
@@ -346,7 +317,7 @@ export default function DashboardPage() {
                       />
                       <button
                         type="submit"
-                        disabled={isSubmitting || !teamContext?.teamId || teamContext.memberCount < 2}
+                        disabled={isSubmitting}
                         className="interactive flex items-center justify-center gap-2 bg-white text-black font-bold px-6 py-3.5 sm:py-0 rounded-2xl hover:bg-cyan-400 hover:scale-105 transition-all text-sm shrink-0 disabled:opacity-50"
                       >
                         {isSubmitting ? (

@@ -68,9 +68,7 @@ import {
   type PositionType,
   type ParticipantStatus,
 } from "@/lib/db";
-import { mapAdminOverrides, mapEventState, DEFAULT_EVENT_STATE, type EventState, PRIZE_MAP } from "@/lib/eventState";
-import { type AdminOverrides } from "@/lib/eventLifecycle";
-import { SCHEDULE } from "@/lib/eventSchedule";
+import { mapEventState, DEFAULT_EVENT_STATE, type EventState, PRIZE_MAP } from "@/lib/eventState";
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -166,75 +164,6 @@ function ControlButton({
             )
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function OverrideControlButton({
-  icon: Icon,
-  label,
-  description,
-  overrideValue,
-  effectiveValue,
-  onSet,
-}: {
-  icon: React.ElementType;
-  label: string;
-  description: string;
-  overrideValue: boolean | null;
-  effectiveValue: boolean;
-  onSet: (value: boolean | null) => Promise<void>;
-}) {
-  const [busy, setBusy] = useState(false);
-
-  const run = async (value: boolean | null) => {
-    setBusy(true);
-    await onSet(value);
-    setBusy(false);
-  };
-
-  const stateText =
-    overrideValue === null
-      ? `AUTO (${effectiveValue ? "ON" : "OFF"})`
-      : overrideValue
-      ? "FORCED ON"
-      : "FORCED OFF";
-
-  const modeButton = (name: string, value: boolean | null) => (
-    <button
-      onClick={() => run(value)}
-      disabled={busy}
-      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 ${
-        overrideValue === value
-          ? "bg-white text-black border-white"
-          : "border-white/10 text-zinc-300 hover:bg-white/5"
-      }`}
-    >
-      {name}
-    </button>
-  );
-
-  return (
-    <div className="border rounded-2xl p-5 bg-white/[0.02] border-white/10">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-white/[0.03] border-white/10">
-            <Icon className="w-5 h-5 text-zinc-300" />
-          </div>
-          <div>
-            <p className="font-bold text-sm">{label}</p>
-            <p className="text-zinc-500 text-xs mt-0.5">{description}</p>
-          </div>
-        </div>
-        <span className="text-[10px] font-mono px-2 py-1 rounded border border-white/10 text-zinc-400">
-          {stateText}
-        </span>
-      </div>
-      <div className="mt-4 flex items-center gap-2">
-        {modeButton("Auto", null)}
-        {modeButton("Force ON", true)}
-        {modeButton("Force OFF", false)}
       </div>
     </div>
   );
@@ -1211,13 +1140,6 @@ export default function AdminDashboardPage() {
   const [results, setResults] = useState<CompResult[]>([]);
   const [submissions, setSubmissions] = useState<CompSubmission[]>([]);
   const [eventState, setLocalEventState] = useState<EventState>(DEFAULT_EVENT_STATE);
-  const [eventOverrides, setEventOverrides] = useState<AdminOverrides>({
-    applicationsOpenOverride: null,
-    briefingReleasedOverride: null,
-    submissionsOpenOverride: null,
-    teamChangesOpenOverride: null,
-    resultsReleased: false,
-  });
   const [dataLoading, setDataLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -1263,10 +1185,7 @@ export default function AdminDashboardPage() {
         getUnassignedParticipants(supabase).catch(() => []),
       ]);
       setParticipants(ps);
-      if (es) {
-        setLocalEventState(mapEventState(es));
-        setEventOverrides(mapAdminOverrides(es));
-      }
+      if (es) setLocalEventState(mapEventState(es));
       setResults(rs);
       setSubmissions(subs);
       setAdminTeams(teams);
@@ -1292,30 +1211,20 @@ export default function AdminDashboardPage() {
     setSelectedParticipant((sp) => sp?.id === id ? { ...sp, status } : sp);
   };
 
-  const reloadEventState = async () => {
-    const supabase = createClient();
-    const es = await getEventState(supabase);
-    setLocalEventState(mapEventState(es));
-    setEventOverrides(mapAdminOverrides(es));
-  };
-
-  const handleSetOverride = async (
-    key:
-      | "briefing_released_override"
-      | "submissions_open_override"
-      | "applications_open_override"
-      | "team_changes_open_override",
-    value: boolean | null
+  const handleToggleControl = async (
+    key: "briefing_released" | "submissions_open" | "results_released" | "applications_open" | "team_changes_open",
+    value: boolean
   ) => {
     const supabase = createClient();
     await updateEventState(supabase, { [key]: value });
-    await reloadEventState();
-  };
-
-  const handleSetResultsReleased = async (value: boolean) => {
-    const supabase = createClient();
-    await updateEventState(supabase, { results_released: value });
-    await reloadEventState();
+    setLocalEventState((s) => ({
+      ...s,
+      briefingReleased: key === "briefing_released" ? value : s.briefingReleased,
+      submissionsOpen: key === "submissions_open" ? value : s.submissionsOpen,
+      resultsReleased: key === "results_released" ? value : s.resultsReleased,
+      applicationsOpen: key === "applications_open" ? value : s.applicationsOpen,
+      teamChangesOpen: key === "team_changes_open" ? value : s.teamChangesOpen,
+    }));
   };
 
   const handleAssignResult = async (teamId: string, track: TrackType, position: PositionType) => {
@@ -1498,21 +1407,15 @@ export default function AdminDashboardPage() {
     );
   }
 
+  const selectedSubmission = selectedParticipant
+    ? (submissions.find((s) => s.participant_id === selectedParticipant.id) ?? null)
+    : null;
   const selectedParticipantTeamId = selectedParticipant && adminTeams.length > 0
     ? (adminTeams.find((t) => t.members.some((m) => m.participant_id === selectedParticipant.id))?.team.id ?? null)
-    : null;
-  const selectedSubmission = selectedParticipantTeamId
-    ? (submissions.find((s) => s.team_id === selectedParticipantTeamId) ?? null)
     : null;
   const selectedResult = selectedParticipant && selectedParticipantTeamId
     ? (results.find((r) => r.team_id === selectedParticipantTeamId) ?? null)
     : null;
-
-  const hasOutOfOrderOverride = Boolean(
-    (!eventState.eventStarted && eventOverrides.briefingReleasedOverride === true) ||
-    (!eventState.eventStarted && eventOverrides.teamChangesOpenOverride === true) ||
-    (!eventState.eventStarted && eventOverrides.submissionsOpenOverride === true)
-  );
 
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-red-500/30">
@@ -1576,61 +1479,51 @@ export default function AdminDashboardPage() {
             <h2 className="font-black text-lg uppercase tracking-wider">Event Controls</h2>
             <span className="text-xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-1 rounded">ADMIN ONLY</span>
           </div>
-          <div className="text-xs text-zinc-400 border border-white/10 rounded-2xl p-4 bg-black/30">
-            <div>Default lifecycle (EST / Oshawa):</div>
-            <div className="mt-1">
-              Applications close {SCHEDULE.APPLICATIONS_CLOSE.toLocaleString("en-CA", { timeZone: "America/Toronto" })};
-              event starts after opening ceremony {SCHEDULE.EVENT_START.toLocaleString("en-CA", { timeZone: "America/Toronto" })};
-              submissions window {SCHEDULE.SUBMISSIONS_OPEN.toLocaleString("en-CA", { timeZone: "America/Toronto" })} to{" "}
-              {SCHEDULE.SUBMISSIONS_CLOSE.toLocaleString("en-CA", { timeZone: "America/Toronto" })}.
-            </div>
-            {hasOutOfOrderOverride && (
-              <div className="mt-2 text-yellow-300">
-                Warning: one or more overrides are forcing lifecycle features before the scheduled event start.
-              </div>
-            )}
-          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <OverrideControlButton
+            <ControlButton
+              active={eventState.briefingReleased}
+              onActivate={() => handleToggleControl("briefing_released", true)}
+              onDeactivate={() => handleToggleControl("briefing_released", false)}
               icon={BookOpen}
               label="Release Briefing"
               description="Reveal tracks, themes & judging criteria to all participants"
-              overrideValue={eventOverrides.briefingReleasedOverride}
-              effectiveValue={eventState.briefingReleased}
-              onSet={(value) => handleSetOverride("briefing_released_override", value)}
+              color="cyan"
             />
-            <OverrideControlButton
+            <ControlButton
+              active={eventState.submissionsOpen}
+              onActivate={() => handleToggleControl("submissions_open", true)}
+              onDeactivate={() => handleToggleControl("submissions_open", false)}
               icon={Upload}
               label="Open Submissions"
               description="Allow participants to submit their Google Drive links"
-              overrideValue={eventOverrides.submissionsOpenOverride}
-              effectiveValue={eventState.submissionsOpen}
-              onSet={(value) => handleSetOverride("submissions_open_override", value)}
+              color="blue"
             />
             <ControlButton
               active={eventState.resultsReleased}
-              onActivate={() => handleSetResultsReleased(true)}
-              onDeactivate={() => handleSetResultsReleased(false)}
+              onActivate={() => handleToggleControl("results_released", true)}
+              onDeactivate={() => handleToggleControl("results_released", false)}
               icon={Trophy}
               label="Release Results"
               description="Publish assigned results to each participant's dashboard"
               color="yellow"
             />
-            <OverrideControlButton
+            <ControlButton
+              active={eventState.applicationsOpen}
+              onActivate={() => handleToggleControl("applications_open", true)}
+              onDeactivate={() => handleToggleControl("applications_open", false)}
               icon={Users}
               label="Applications Open"
               description="Control whether new participants can register for this competition"
-              overrideValue={eventOverrides.applicationsOpenOverride}
-              effectiveValue={eventState.applicationsOpen}
-              onSet={(value) => handleSetOverride("applications_open_override", value)}
+              color="cyan"
             />
-            <OverrideControlButton
+            <ControlButton
+              active={eventState.teamChangesOpen}
+              onActivate={() => handleToggleControl("team_changes_open", true)}
+              onDeactivate={() => handleToggleControl("team_changes_open", false)}
               icon={Activity}
               label="Team Changes"
               description="Freeze or unlock team creation, joining, leaving, and roster changes"
-              overrideValue={eventOverrides.teamChangesOpenOverride}
-              effectiveValue={eventState.teamChangesOpen}
-              onSet={(value) => handleSetOverride("team_changes_open_override", value)}
+              color="blue"
             />
           </div>
         </div>

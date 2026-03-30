@@ -144,7 +144,7 @@ export default function RegisterPage() {
         const es = await getEventState(supabase);
         setEventState(mapEventState(es));
       } catch {
-        // Fail closed when lifecycle state cannot be loaded.
+        // If event state cannot be loaded, fall back to defaults (open).
       } finally {
         setEventStateLoading(false);
       }

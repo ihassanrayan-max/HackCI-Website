@@ -2,30 +2,14 @@
 
 import { motion } from "framer-motion";
 import { Calendar, PartyPopper } from "lucide-react";
-import { SCHEDULE, getEventPhase } from "@/lib/eventSchedule";
+import { EVENT_START, getEventPhase } from "@/lib/eventSchedule";
 import { useCountdown } from "@/hooks/useCountdown";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export default function LandingHeroCountdown() {
-  const { days, hours, minutes, seconds, isExpired } = useCountdown(SCHEDULE.EVENT_START);
+  const { days, hours, minutes, seconds, isExpired } = useCountdown(EVENT_START);
   const phase = getEventPhase(new Date());
-
-  if (phase === "pre") {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-        className="mt-10 w-full max-w-2xl"
-      >
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 backdrop-blur-md">
-          <p className="text-sm font-bold text-cyan-400">Competition opens soon</p>
-          <p className="text-sm text-zinc-400 mt-1">Detailed event timing is revealed after opening ceremony.</p>
-        </div>
-      </motion.div>
-    );
-  }
 
   if (isExpired) {
     return (
