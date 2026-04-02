@@ -10,6 +10,7 @@ import {
   LogOut,
   Medal,
   AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -136,6 +137,8 @@ export default function DashboardPage() {
   // Results tile: show to everyone when results are released; otherwise show when they have a submission (pending)
   const showResultsTile =
     eventState.resultsReleased || (!eventState.resultsReleased && submission !== null);
+  const canAccessBriefing =
+    participant?.status === "approved" && eventState.briefingReleased;
 
   if (loading || signingOut) {
     return (
@@ -159,6 +162,17 @@ export default function DashboardPage() {
             <BrandLogo className="transition-transform group-hover/logo:scale-[1.03]" markClassName="w-10 h-10 text-cyan-400" textClassName="text-xl font-black tracking-tighter text-white" />
           </Link>
           <div className="flex items-center gap-4">
+            {canAccessBriefing && (
+              <MagneticWrapper>
+                <Link
+                  href="/briefing"
+                  className="interactive px-5 py-2.5 rounded-full border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Challenge details
+                </Link>
+              </MagneticWrapper>
+            )}
             {eventState.teamChangesOpen && (
               <MagneticWrapper>
                 <Link

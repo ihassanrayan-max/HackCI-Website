@@ -325,16 +325,19 @@ export default function LandingPage() {
                   <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 flex items-center justify-center mb-8 border border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,204,0.3)]">
                     <Trophy className="w-8 h-8 text-cyan-400" />
                   </div>
-                  <h3 className="text-3xl font-bold mb-2">1st Position</h3>
-                  <div className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600 mb-8 tracking-tighter">
-                    $400
-                  </div>
+                  <h3 className="text-3xl font-bold mb-8">Design team 1: $400</h3>
                   <ul className="space-y-4 text-zinc-400 font-medium">
                     <li className="flex items-start gap-3">
                       <div className="p-1 rounded-full bg-cyan-400/10 mt-0.5">
                         <ChevronRight className="w-4 h-4 text-cyan-400" />
                       </div>
-                      <span>Research interview opportunity with Dr. Hossam Gaber (potential summer 2026 research role, May–August 2026).</span>
+                      <span>Interview with the winning teams.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="p-1 rounded-full bg-cyan-400/10 mt-0.5">
+                        <ChevronRight className="w-4 h-4 text-cyan-400" />
+                      </div>
+                      <span>The payment will be for the design work during this period.</span>
                     </li>
                   </ul>
                 </TiltCard>
@@ -347,16 +350,19 @@ export default function LandingPage() {
                   <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-8 border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
                     <Code className="w-8 h-8 text-blue-400" />
                   </div>
-                  <h3 className="text-3xl font-bold mb-2">2nd Position</h3>
-                  <div className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600 mb-8 tracking-tighter">
-                    $300
-                  </div>
+                  <h3 className="text-3xl font-bold mb-8">Design team 2: $300</h3>
                   <ul className="space-y-4 text-zinc-400 font-medium">
                     <li className="flex items-start gap-3">
                       <div className="p-1 rounded-full bg-blue-400/10 mt-0.5">
                         <ChevronRight className="w-4 h-4 text-blue-400" />
                       </div>
-                      <span>Research interview opportunity with Dr. Hossam Gaber (potential summer 2026 research role, May–August 2026).</span>
+                      <span>Interview with the winning teams.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="p-1 rounded-full bg-blue-400/10 mt-0.5">
+                        <ChevronRight className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <span>The payment will be for the design work during this period.</span>
                     </li>
                   </ul>
                 </TiltCard>
