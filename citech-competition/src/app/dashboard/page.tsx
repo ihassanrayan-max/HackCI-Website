@@ -35,6 +35,7 @@ import {
   type EventState,
   PRIZE_MAP,
 } from "@/lib/eventState";
+import ParticipantSubmissionGuidance from "@/components/dashboard/ParticipantSubmissionGuidance";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -422,6 +423,8 @@ export default function DashboardPage() {
           )}
 
         </div>
+
+        {participant?.status === "approved" && <ParticipantSubmissionGuidance />}
       </main>
     </div>
   );
