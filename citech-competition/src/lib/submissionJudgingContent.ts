@@ -1,27 +1,40 @@
 /**
- * Verbatim copy from organizer materials (email deliverables + evaluation form).
- * Do not add content here that is not from those sources.
+ * Submission requirements — text as provided by organizers.
  */
 
 export const FINAL_SUBMISSION_TITLE = "Final submission" as const;
 
-/** Top-level deliverable: report / ppt with nested items (from organizer email). */
-export const DELIVERABLE_REPORT_PPT = {
-  title: "Report / ppt about the solution",
-  includes: [
-    "Brief background literature of existing solutions",
-    "Proposed solution details",
-    "Design",
-    "Case studies",
-    "Demo",
-    "Results analysis",
-    "Conclusions",
-  ],
-} as const;
+export type SubmissionRequirement = {
+  title: string;
+  text: string;
+};
 
-export const DELIVERABLE_DEMO_SYSTEM = "Simple demo system" as const;
-
-export const DELIVERABLE_SHORT_VIDEO_OPTIONAL = "Short video (optional)" as const;
+export const SUBMISSION_REQUIREMENTS: readonly SubmissionRequirement[] = [
+  {
+    title: "Title Page",
+    text: "Include team name, all team members, and the selected topic",
+  },
+  {
+    title: "Report",
+    text: "Present your proposed solution, system design (including diagrams or flowcharts if applicable), relevant case studies, results analysis, and conclusion",
+  },
+  {
+    title: "PowerPoint Slides",
+    text: "Submit the slides to be used for the live presentation (no script required)",
+  },
+  {
+    title: "Source Code (if applicable)",
+    text: "Include with clear instructions for execution (e.g., via a GitHub repository)",
+  },
+  {
+    title: "Data (if applicable)",
+    text: "Provide any collected data in CSV format",
+  },
+  {
+    title: "Optional",
+    text: "Include a short video demonstrating your system",
+  },
+] as const;
 
 export const EVALUATION_FORM_TITLE = "Evaluation Form" as const;
 

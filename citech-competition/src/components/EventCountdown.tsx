@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Code, CheckCircle2 } from "lucide-react";
-import { getNextMilestone } from "@/lib/eventSchedule";
+import {
+  formatMilestoneDay,
+  formatScheduleRangeChip,
+  getNextMilestone,
+} from "@/lib/eventSchedule";
 import { computeCountdown } from "@/hooks/useCountdown";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -21,7 +25,9 @@ export default function EventCountdown() {
       <div className="flex h-full min-h-[180px] flex-col justify-between gap-4 opacity-60">
         <div className="flex justify-between items-start">
           <div className="h-12 w-12 rounded-xl border border-cyan-400/20 bg-cyan-400/10" />
-          <span className="rounded bg-cyan-400/10 px-2 py-1 font-mono text-xs text-cyan-400">APR 2–9</span>
+          <span className="max-w-[min(100%,9rem)] truncate rounded bg-cyan-400/10 px-2 py-1 text-center font-mono text-[10px] text-cyan-400 sm:text-xs">
+            {formatScheduleRangeChip()}
+          </span>
         </div>
         <div className="grid grid-cols-4 gap-1.5">
           {["D", "H", "M", "S"].map((label) => (
@@ -47,7 +53,9 @@ export default function EventCountdown() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-400/20">
             <CheckCircle2 className="h-6 w-6 text-cyan-400" />
           </div>
-          <span className="rounded bg-cyan-400/10 px-2 py-1 font-mono text-xs text-cyan-400">APR 2–9</span>
+          <span className="max-w-[min(100%,9rem)] truncate rounded bg-cyan-400/10 px-2 py-1 text-center font-mono text-[10px] text-cyan-400 sm:text-xs">
+            {formatScheduleRangeChip()}
+          </span>
         </div>
         <div>
           <h3 className="mb-1 text-xl font-black text-zinc-200">Competition complete</h3>
@@ -72,7 +80,9 @@ export default function EventCountdown() {
         <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-400/20">
           <Code className="h-6 w-6 text-cyan-400" />
         </div>
-        <span className="rounded bg-cyan-400/10 px-2 py-1 font-mono text-xs text-cyan-400">APR 2–9</span>
+        <span className="max-w-[min(100%,7rem)] truncate rounded bg-cyan-400/10 px-2 py-1 text-center font-mono text-[10px] text-cyan-400 sm:max-w-[9rem] sm:text-xs">
+          {formatMilestoneDay(milestone.date)}
+        </span>
       </div>
       <div className="flex flex-1 flex-col justify-end gap-3">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{milestone.label}</p>

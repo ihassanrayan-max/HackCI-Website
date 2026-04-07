@@ -36,6 +36,7 @@ import {
   PRIZE_MAP,
 } from "@/lib/eventState";
 import ParticipantSubmissionGuidance from "@/components/dashboard/ParticipantSubmissionGuidance";
+import { SUBMISSION_PORTAL_HELPER } from "@/lib/submissionLogisticsCopy";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -343,6 +344,9 @@ export default function DashboardPage() {
                         Submit
                       </button>
                     </form>
+                    <p className="text-xs text-zinc-500 leading-relaxed px-1">
+                      {SUBMISSION_PORTAL_HELPER}
+                    </p>
                     {submissionError && (
                       <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs px-1">
                         {submissionError}
