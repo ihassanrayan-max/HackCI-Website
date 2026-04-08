@@ -46,10 +46,12 @@ export interface CompEventState {
 
 export interface CompSubmission {
   id: string;
-  participant_id: string;
+  team_id: string;
   drive_link: string;
   submitted_at: string;
   updated_at: string;
+  /** Participant who last saved the Drive link (insert or update). */
+  submitted_by_participant_id: string | null;
 }
 
 export interface CompResult {
@@ -269,16 +271,25 @@ export async function updateEventState(
   if (error) throw error;
 }
 
-// ─── Submission helpers ────────────────────────────────────────────────────────
+// ─── Submission helpers (one row per team; teammates share via RLS) ───────────
 
-export async function getMySubmission(
+/** Submission for the current user's team, or null if not on a team / no row yet. */
+export async function getMyTeamSubmission(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
   participantId: string
 ) {
+  const { data: membership } = await supabase
+    .from("comp_team_members")
+    .select("team_id")
+    .eq("participant_id", participantId)
+    .maybeSingle();
+
+  if (!membership?.team_id) return null;
+
   const { data } = await supabase
     .from("comp_submissions")
     .select("*")
-    .eq("participant_id", participantId)
+    .eq("team_id", membership.team_id)
     .maybeSingle();
 
   return data as CompSubmission | null;
@@ -293,16 +304,23 @@ export async function getAllSubmissions(supabase: ReturnType<typeof import("@/li
   return (data ?? []) as CompSubmission[];
 }
 
-export async function upsertSubmission(
+export async function upsertTeamSubmission(
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>,
-  participantId: string,
-  driveLink: string
+  teamId: string,
+  driveLink: string,
+  submittedByParticipantId: string
 ) {
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("comp_submissions")
     .upsert(
-      { participant_id: participantId, drive_link: driveLink, submitted_at: new Date().toISOString() },
-      { onConflict: "participant_id" }
+      {
+        team_id: teamId,
+        drive_link: driveLink,
+        submitted_at: now,
+        submitted_by_participant_id: submittedByParticipantId,
+      },
+      { onConflict: "team_id" }
     )
     .select()
     .single();

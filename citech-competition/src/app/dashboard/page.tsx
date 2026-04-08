@@ -21,9 +21,9 @@ import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
 import {
   getMyParticipant,
-  getMySubmission,
+  getMyTeamSubmission,
   getMyResult,
-  upsertSubmission,
+  upsertTeamSubmission,
   checkIsAdmin,
   type CompParticipant,
   type CompSubmission,
@@ -50,6 +50,8 @@ export default function DashboardPage() {
   const [submissionLink, setSubmissionLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
+  const [isEditingSubmission, setIsEditingSubmission] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -70,10 +72,20 @@ export default function DashboardPage() {
         .single();
       if (es) setEventState(mapEventState(es));
 
-      const sub = await getMySubmission(supabase, p.id);
-      if (sub) {
-        setSubmission(sub);
-        setSubmissionLink(sub.drive_link);
+      const { data: mem } = await supabase
+        .from("comp_team_members")
+        .select("team_id")
+        .eq("participant_id", p.id)
+        .maybeSingle();
+      const tid = mem?.team_id ?? null;
+      setMyTeamId(tid);
+
+      if (tid) {
+        const sub = await getMyTeamSubmission(supabase, p.id);
+        if (sub) {
+          setSubmission(sub);
+          setSubmissionLink(sub.drive_link);
+        }
       }
 
       const res = await getMyResult(supabase, p.id);
@@ -104,14 +116,15 @@ export default function DashboardPage() {
       setSubmissionError("Please provide a valid Google Drive link.");
       return;
     }
-    if (!participant) return;
+    if (!participant || !myTeamId) return;
     setSubmissionError("");
     setIsSubmitting(true);
 
     try {
       const supabase = createClient();
-      const sub = await upsertSubmission(supabase, participant.id, submissionLink);
+      const sub = await upsertTeamSubmission(supabase, myTeamId, submissionLink, participant.id);
       setSubmission(sub);
+      setIsEditingSubmission(false);
     } catch (err: any) {
       setSubmissionError(err?.message ?? "Submission failed. Please try again.");
     } finally {
@@ -278,9 +291,45 @@ export default function DashboardPage() {
                 <EventCountdown />
               </motion.div>
 
-              {/* Submission Portal — only shown when submissions are open OR participant already submitted */}
+              {/* Team required — one submission per team; roster membership enforced in database */}
           <AnimatePresence>
-            {(eventState.submissionsOpen || submission) && (
+            {participant?.status === "approved" && !myTeamId && (
+              <motion.div
+                key="team-required-tile"
+                variants={bentoVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                transition={{ delay: 0.35 }}
+                className="md:col-span-2 lg:col-span-2 row-span-1 bg-white/[0.02] border border-amber-500/20 rounded-3xl p-8 flex flex-col justify-center gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-6 h-6 text-amber-400 shrink-0" />
+                  <h2 className="text-xl font-bold">Join a team to submit</h2>
+                </div>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  Hackathon deliverables are one Google Drive link per team. Create or join a team first; then any teammate can submit or update the link while submissions are open.
+                </p>
+                {eventState.teamChangesOpen ? (
+                  <MagneticWrapper>
+                    <Link
+                      href="/team"
+                      className="interactive inline-flex items-center justify-center gap-2 bg-white text-black font-bold px-6 py-3 rounded-2xl hover:bg-cyan-400 transition-colors text-sm w-fit"
+                    >
+                      <Users className="w-4 h-4" />
+                      Open Team Hub
+                    </Link>
+                  </MagneticWrapper>
+                ) : (
+                  <p className="text-xs text-zinc-500">Team roster changes are closed. If you need help, contact the organisers.</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+              {/* Submission Portal — team members only; shown when open or team already submitted */}
+          <AnimatePresence>
+            {participant?.status === "approved" && myTeamId && (eventState.submissionsOpen || submission) && (
               <motion.div
                 key="submission-tile"
                 variants={bentoVariants}
@@ -295,24 +344,29 @@ export default function DashboardPage() {
                     <Upload className="w-5 h-5 text-zinc-400" />
                     Submission Portal
                   </h2>
-                  {submission && (
+                  {submission && !isEditingSubmission && (
                     <span className="text-xs font-mono text-green-400 bg-green-400/10 border border-green-400/20 px-3 py-1 rounded-full">
                       RECEIVED
                     </span>
                   )}
                 </div>
 
-                {submission && !isSubmitting ? (
+                {submission && !isEditingSubmission && !isSubmitting ? (
                   <div className="flex flex-col items-center justify-center flex-1">
                     <div className="flex items-center gap-4 bg-green-500/10 border border-green-500/20 w-full p-4 rounded-2xl">
                       <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-green-400 font-medium truncate">Submission received successfully</p>
+                        <p className="text-sm text-green-400 font-medium truncate">Team submission received</p>
                         <p className="text-xs text-zinc-500 font-mono truncate">{submission.drive_link}</p>
                       </div>
                       {eventState.submissionsOpen && (
                         <button
-                          onClick={() => setSubmission(null)}
+                          type="button"
+                          onClick={() => {
+                            setIsEditingSubmission(true);
+                            setSubmissionLink(submission.drive_link);
+                            setSubmissionError("");
+                          }}
                           className="text-xs text-zinc-400 hover:text-white transition-colors underline shrink-0"
                         >
                           Edit
@@ -341,9 +395,22 @@ export default function DashboardPage() {
                         ) : (
                           <Upload className="w-4 h-4" />
                         )}
-                        Submit
+                        {submission ? "Save" : "Submit"}
                       </button>
                     </form>
+                    {submission && isEditingSubmission && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingSubmission(false);
+                          setSubmissionLink(submission.drive_link);
+                          setSubmissionError("");
+                        }}
+                        className="text-xs text-zinc-500 hover:text-zinc-300 underline px-1"
+                      >
+                        Cancel edit
+                      </button>
+                    )}
                     <p className="text-xs text-zinc-500 leading-relaxed px-1">
                       {SUBMISSION_PORTAL_HELPER}
                     </p>

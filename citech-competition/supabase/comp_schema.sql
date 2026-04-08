@@ -102,43 +102,7 @@ VALUES (1, false, false, false)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
--- comp_submissions
--- One per participant (UNIQUE on participant_id).
--- ============================================================
-CREATE TABLE IF NOT EXISTS public.comp_submissions (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    participant_id  UUID NOT NULL UNIQUE REFERENCES public.comp_participants(id) ON DELETE CASCADE,
-    drive_link      TEXT NOT NULL,
-    submitted_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TRIGGER comp_submissions_updated_at
-    BEFORE UPDATE ON public.comp_submissions
-    FOR EACH ROW EXECUTE FUNCTION public.comp_handle_updated_at();
-
--- ============================================================
--- comp_results
--- Admin-assigned. At most 4 rows: 2 tracks × 2 positions.
--- UNIQUE(track, position) prevents awarding same slot twice.
--- UNIQUE(team_id) prevents one team winning more than one slot.
--- ============================================================
-CREATE TABLE IF NOT EXISTS public.comp_results (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    team_id         UUID NOT NULL UNIQUE REFERENCES public.comp_teams(id) ON DELETE CASCADE,
-    track           TEXT NOT NULL CHECK (track IN ('A', 'B')),
-    position        INT NOT NULL CHECK (position IN (1, 2)),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT unique_track_position UNIQUE (track, position)
-);
-
-CREATE TRIGGER comp_results_updated_at
-    BEFORE UPDATE ON public.comp_results
-    FOR EACH ROW EXECUTE FUNCTION public.comp_handle_updated_at();
-
--- ============================================================
--- comp_teams
+-- comp_teams (before comp_submissions / comp_results — FK order)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.comp_teams (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -179,6 +143,44 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER comp_team_members_cap
     BEFORE INSERT ON public.comp_team_members
     FOR EACH ROW EXECUTE FUNCTION public.comp_enforce_team_cap();
+
+-- ============================================================
+-- comp_submissions
+-- One per team (UNIQUE on team_id). See migrations/comp_submissions_per_team.sql
+-- for upgrading legacy participant-scoped rows.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.comp_submissions (
+    id                           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_id                      UUID NOT NULL UNIQUE REFERENCES public.comp_teams(id) ON DELETE CASCADE,
+    drive_link                   TEXT NOT NULL,
+    submitted_at                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    submitted_by_participant_id  UUID REFERENCES public.comp_participants(id) ON DELETE SET NULL
+);
+
+CREATE TRIGGER comp_submissions_updated_at
+    BEFORE UPDATE ON public.comp_submissions
+    FOR EACH ROW EXECUTE FUNCTION public.comp_handle_updated_at();
+
+-- ============================================================
+-- comp_results
+-- Admin-assigned. At most 4 rows: 2 tracks × 2 positions.
+-- UNIQUE(track, position) prevents awarding same slot twice.
+-- UNIQUE(team_id) prevents one team winning more than one slot.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.comp_results (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_id         UUID NOT NULL UNIQUE REFERENCES public.comp_teams(id) ON DELETE CASCADE,
+    track           TEXT NOT NULL CHECK (track IN ('A', 'B')),
+    position        INT NOT NULL CHECK (position IN (1, 2)),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT unique_track_position UNIQUE (track, position)
+);
+
+CREATE TRIGGER comp_results_updated_at
+    BEFORE UPDATE ON public.comp_results
+    FOR EACH ROW EXECUTE FUNCTION public.comp_handle_updated_at();
 
 -- ============================================================
 -- ROW LEVEL SECURITY
@@ -241,31 +243,51 @@ CREATE POLICY "comp_event_state_update" ON public.comp_event_state
 
 -- ---- comp_submissions ----
 
--- Participants see own; admins see all
+-- Teammates see their team's row; admins see all
 CREATE POLICY "comp_submissions_select" ON public.comp_submissions
     FOR SELECT USING (
-        participant_id = public.comp_get_participant_id()
-        OR public.comp_is_admin()
+        public.comp_is_admin()
+        OR EXISTS (
+            SELECT 1
+            FROM public.comp_team_members tm
+            WHERE tm.team_id = team_id
+              AND tm.participant_id = public.comp_get_participant_id()
+        )
     );
 
--- Participants can insert their own submission when submissions are open
 CREATE POLICY "comp_submissions_insert" ON public.comp_submissions
     FOR INSERT WITH CHECK (
-        participant_id = public.comp_get_participant_id()
-        AND (SELECT submissions_open FROM public.comp_event_state WHERE id = 1)
+        (SELECT submissions_open FROM public.comp_event_state WHERE id = 1)
+        AND EXISTS (
+            SELECT 1
+            FROM public.comp_team_members tm
+            WHERE tm.team_id = team_id
+              AND tm.participant_id = public.comp_get_participant_id()
+        )
+        AND submitted_by_participant_id = public.comp_get_participant_id()
     );
 
--- Participants can update (edit) their own submission when submissions are open
 CREATE POLICY "comp_submissions_update" ON public.comp_submissions
     FOR UPDATE USING (
-        participant_id = public.comp_get_participant_id()
-        AND (SELECT submissions_open FROM public.comp_event_state WHERE id = 1)
-    ) WITH CHECK (
-        participant_id = public.comp_get_participant_id()
-        AND (SELECT submissions_open FROM public.comp_event_state WHERE id = 1)
+        (SELECT submissions_open FROM public.comp_event_state WHERE id = 1)
+        AND EXISTS (
+            SELECT 1
+            FROM public.comp_team_members tm
+            WHERE tm.team_id = team_id
+              AND tm.participant_id = public.comp_get_participant_id()
+        )
+    )
+    WITH CHECK (
+        (SELECT submissions_open FROM public.comp_event_state WHERE id = 1)
+        AND EXISTS (
+            SELECT 1
+            FROM public.comp_team_members tm
+            WHERE tm.team_id = team_id
+              AND tm.participant_id = public.comp_get_participant_id()
+        )
+        AND submitted_by_participant_id = public.comp_get_participant_id()
     );
 
--- Only admins can delete submissions
 CREATE POLICY "comp_submissions_delete" ON public.comp_submissions
     FOR DELETE USING (public.comp_is_admin());
 
@@ -369,7 +391,7 @@ CREATE POLICY "comp_team_members_delete" ON public.comp_team_members
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_comp_participants_user_id ON public.comp_participants(user_id);
 CREATE INDEX IF NOT EXISTS idx_comp_participants_status  ON public.comp_participants(status);
-CREATE INDEX IF NOT EXISTS idx_comp_submissions_participant ON public.comp_submissions(participant_id);
+CREATE INDEX IF NOT EXISTS idx_comp_submissions_team_id ON public.comp_submissions(team_id);
 CREATE INDEX IF NOT EXISTS idx_comp_results_team_id      ON public.comp_results(team_id);
 CREATE INDEX IF NOT EXISTS idx_comp_results_track_pos     ON public.comp_results(track, position);
 CREATE INDEX IF NOT EXISTS idx_comp_teams_code            ON public.comp_teams(code);

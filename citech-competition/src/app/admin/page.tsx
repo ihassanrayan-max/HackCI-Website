@@ -482,10 +482,10 @@ function ParticipantDetail({
             )}
           </div>
 
-          {/* Hackathon submission (Drive) — separate from application resume */}
+          {/* Hackathon submission (Drive) — one per team; same link for all members */}
           <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-3">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Hackathon submission</h3>
-            <p className="text-zinc-600 text-xs -mt-1">Project deliverable (Google Drive link), not the registration resume.</p>
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Team submission (Hackathon)</h3>
+            <p className="text-zinc-600 text-xs -mt-1">Project deliverable (Google Drive link), not the registration resume. Shown for every member of the same team.</p>
             {submission ? (
               <div className="space-y-2">
                 <a
@@ -547,6 +547,7 @@ function AdminTeamsTab({
   onApproveRequest,
   onDenyRequest,
   results,
+  submissions,
   onAssignResult,
   onClearResult,
 }: {
@@ -572,6 +573,7 @@ function AdminTeamsTab({
   onApproveRequest: (req: CompJoinRequestWithParticipant) => Promise<void>;
   onDenyRequest: (req: CompJoinRequestWithParticipant) => Promise<void>;
   results: CompResult[];
+  submissions: CompSubmission[];
   onAssignResult: (teamId: string, track: TrackType, position: PositionType) => Promise<void>;
   onClearResult: (teamId: string) => Promise<void>;
 }) {
@@ -594,6 +596,13 @@ function AdminTeamsTab({
   );
 
   const selectedTeamData = selectedTeamId ? teams.find((t) => t.team.id === selectedTeamId) : null;
+  const selectedTeamSubmission =
+    selectedTeamData && submissions.find((s) => s.team_id === selectedTeamData.team.id);
+  const submitterName = selectedTeamSubmission?.submitted_by_participant_id
+    ? selectedTeamData?.members.find(
+        (m) => m.participant_id === selectedTeamSubmission.submitted_by_participant_id
+      )?.comp_participants?.full_name?.trim() ?? null
+    : null;
 
   return (
     <>
@@ -878,6 +887,31 @@ function AdminTeamsTab({
                       onClear={onClearResult}
                     />
                   </div>
+                </div>
+
+                {/* Hackathon submission (Drive) — canonical per team */}
+                <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 space-y-3">
+                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Hackathon submission</h3>
+                  <p className="text-zinc-600 text-xs -mt-1">One link per team (Google Drive), not the registration resume.</p>
+                  {selectedTeamSubmission ? (
+                    <div className="space-y-2">
+                      <a
+                        href={selectedTeamSubmission.drive_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-medium"
+                      >
+                        <ExternalLink className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{selectedTeamSubmission.drive_link}</span>
+                      </a>
+                      <p className="text-zinc-600 text-xs font-mono">
+                        Submitted {new Date(selectedTeamSubmission.submitted_at).toLocaleString()}
+                        {submitterName ? ` · Last saved by ${submitterName}` : ""}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-zinc-600 text-sm">No submission yet.</p>
+                  )}
                 </div>
 
                 {/* Members */}
@@ -1407,11 +1441,11 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const selectedSubmission = selectedParticipant
-    ? (submissions.find((s) => s.participant_id === selectedParticipant.id) ?? null)
-    : null;
   const selectedParticipantTeamId = selectedParticipant && adminTeams.length > 0
     ? (adminTeams.find((t) => t.members.some((m) => m.participant_id === selectedParticipant.id))?.team.id ?? null)
+    : null;
+  const selectedSubmission = selectedParticipantTeamId
+    ? (submissions.find((s) => s.team_id === selectedParticipantTeamId) ?? null)
     : null;
   const selectedResult = selectedParticipant && selectedParticipantTeamId
     ? (results.find((r) => r.team_id === selectedParticipantTeamId) ?? null)
@@ -1707,6 +1741,7 @@ export default function AdminDashboardPage() {
             onApproveRequest={handleAdminApproveRequest}
             onDenyRequest={handleAdminDenyRequest}
             results={results}
+            submissions={submissions}
             onAssignResult={handleAssignResult}
             onClearResult={handleClearResult}
           />
