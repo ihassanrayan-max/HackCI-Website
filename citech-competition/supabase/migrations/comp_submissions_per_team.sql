@@ -8,6 +8,12 @@
 -- Orphan rows (participant not in any team) are deleted — export first if needed.
 -- ============================================================
 
+-- 0. Drop old RLS policies first — they reference participant_id and block DROP COLUMN
+DROP POLICY IF EXISTS "comp_submissions_select" ON public.comp_submissions;
+DROP POLICY IF EXISTS "comp_submissions_insert" ON public.comp_submissions;
+DROP POLICY IF EXISTS "comp_submissions_update" ON public.comp_submissions;
+DROP POLICY IF EXISTS "comp_submissions_delete" ON public.comp_submissions;
+
 -- 1. New columns (nullable until backfill)
 ALTER TABLE public.comp_submissions
   ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES public.comp_teams(id) ON DELETE CASCADE;
@@ -62,13 +68,8 @@ DROP INDEX IF EXISTS public.idx_comp_submissions_participant;
 CREATE INDEX IF NOT EXISTS idx_comp_submissions_team_id ON public.comp_submissions(team_id);
 
 -- ============================================================
--- 9. RLS: replace policies for team-scoped submissions
+-- 9. RLS: team-scoped policies (old policies already dropped in step 0)
 -- ============================================================
-DROP POLICY IF EXISTS "comp_submissions_select" ON public.comp_submissions;
-DROP POLICY IF EXISTS "comp_submissions_insert" ON public.comp_submissions;
-DROP POLICY IF EXISTS "comp_submissions_update" ON public.comp_submissions;
-DROP POLICY IF EXISTS "comp_submissions_delete" ON public.comp_submissions;
-
 CREATE POLICY "comp_submissions_select" ON public.comp_submissions
   FOR SELECT USING (
     public.comp_is_admin()
