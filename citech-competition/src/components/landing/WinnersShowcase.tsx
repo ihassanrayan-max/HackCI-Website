@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Github, ImageIcon, Play, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, Github, Trophy, Users, X } from "lucide-react";
 import Image from "next/image";
-import { startTransition, useState } from "react";
+import { createPortal } from "react-dom";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import {
   WINNER_ENTRIES,
   WINNERS_SECTION_COPY,
@@ -80,15 +81,84 @@ const TRACK_A_PODIUM_OFFSETS = {
   third: "lg:pt-32",
 } as const;
 
+function WinnerPhotoLightbox({
+  entry,
+  onClose,
+}: {
+  entry: WinnerEntry | null;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!entry) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [entry, onClose]);
+
+  if (!mounted || !entry?.demoImageUrl) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Full-size photo: ${entry.teamName}`}
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/92 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close preview"
+      />
+      <div className="relative z-10 flex max-h-[min(90vh,100dvh)] max-w-[min(95vw,1400px)] flex-col items-center">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute -right-1 -top-11 z-20 rounded-full border border-white/20 bg-zinc-900/95 p-2.5 text-white shadow-lg transition hover:bg-zinc-800 sm:-right-2 sm:-top-12"
+          aria-label="Close preview"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        {/* Native img for full-resolution preview without layout constraints from fill/sizes */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={entry.demoImageUrl}
+          alt={entry.demoImageAlt ?? `${entry.teamName} with judges`}
+          className="max-h-[min(85vh,100dvh)] w-auto max-w-full rounded-lg object-contain shadow-2xl ring-1 ring-white/10"
+        />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function WinnerCard({
   entry,
   featured = false,
   compact = false,
+  featuredPhoto = false,
+  onImagePreview,
   className = "",
 }: {
   entry: WinnerEntry;
   featured?: boolean;
   compact?: boolean;
+  /** Wider/taller hero image (Track B spotlight only; podium cards stay uniform). */
+  featuredPhoto?: boolean;
+  onImagePreview?: (entry: WinnerEntry) => void;
   className?: string;
 }) {
   const reduceMotion = useReducedMotion();
@@ -155,27 +225,34 @@ function WinnerCard({
         </div>
 
         {entry.demoImageUrl ? (
-          <div className="mb-6 overflow-hidden rounded-[1.55rem] border border-white/10 bg-black/30">
-            <div className="relative aspect-[16/9] overflow-hidden">
+          <div className="mb-6 overflow-hidden rounded-[1.55rem] border border-white/10 bg-black/20">
+            <button
+              type="button"
+              onClick={() => onImagePreview?.(entry)}
+              className={`group/photo relative block w-full cursor-zoom-in overflow-hidden text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+                featuredPhoto
+                  ? "aspect-[16/10] min-h-[220px] lg:aspect-[2/1] lg:min-h-[280px]"
+                  : "aspect-[16/9]"
+              }`}
+              aria-label={`Open full-size photo: ${entry.teamName}`}
+            >
               <Image
                 src={entry.demoImageUrl}
                 alt={entry.demoImageAlt ?? entry.teamName}
                 fill
-                unoptimized
-                className="object-cover"
+                sizes={
+                  featuredPhoto
+                    ? "(max-width: 1024px) 100vw, min(80rem, 92vw)"
+                    : "(max-width: 1024px) 100vw, 33vw"
+                }
+                unoptimized={!entry.demoImageUrl.startsWith("/")}
+                className="object-cover object-center transition duration-300 group-hover/photo:scale-[1.02]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 flex items-center p-4 sm:p-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-zinc-100">
-                  {entry.demoMediaKind === "video" ? (
-                    <Play className="h-3.5 w-3.5 text-cyan-200" />
-                  ) : (
-                    <ImageIcon className="h-3.5 w-3.5 text-cyan-200" />
-                  )}
-                  {entry.demoMediaKind === "video" ? "Demo Video" : "Demo Preview"}
-                </div>
-              </div>
-            </div>
+              <span
+                className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover/photo:bg-black/10"
+                aria-hidden
+              />
+            </button>
           </div>
         ) : null}
 
@@ -289,10 +366,12 @@ function PodiumColumn({
   entry,
   columnClassName = "",
   cardClassName = "",
+  onImagePreview,
 }: {
   entry: WinnerEntry;
   columnClassName?: string;
   cardClassName?: string;
+  onImagePreview?: (entry: WinnerEntry) => void;
 }) {
   return (
     <div className={`flex flex-col ${columnClassName}`}>
@@ -300,13 +379,14 @@ function PodiumColumn({
         entry={entry}
         featured={entry.placement === "1st"}
         compact
+        onImagePreview={onImagePreview}
         className={cardClassName}
       />
     </div>
   );
 }
 
-function TrackAPodium() {
+function TrackAPodium({ onImagePreview }: { onImagePreview?: (entry: WinnerEntry) => void }) {
   const trackAEntries = WINNER_ENTRIES.filter((entry) => entry.track === "A");
   const firstPlace = trackAEntries.find((entry) => entry.placement === "1st");
   const secondPlace = trackAEntries.find((entry) => entry.placement === "2nd");
@@ -333,6 +413,7 @@ function TrackAPodium() {
           <PodiumColumn
             entry={secondPlace}
             columnClassName={TRACK_A_PODIUM_OFFSETS.second}
+            onImagePreview={onImagePreview}
           />
         </div>
         <div className="order-1 lg:order-2">
@@ -340,12 +421,14 @@ function TrackAPodium() {
             entry={firstPlace}
             columnClassName={TRACK_A_PODIUM_OFFSETS.first}
             cardClassName="shadow-[0_0_50px_rgba(251,191,36,0.08)]"
+            onImagePreview={onImagePreview}
           />
         </div>
         <div className="order-3">
           <PodiumColumn
             entry={thirdPlace}
             columnClassName={TRACK_A_PODIUM_OFFSETS.third}
+            onImagePreview={onImagePreview}
           />
         </div>
       </div>
@@ -353,7 +436,7 @@ function TrackAPodium() {
   );
 }
 
-function TrackBSpotlight() {
+function TrackBSpotlight({ onImagePreview }: { onImagePreview?: (entry: WinnerEntry) => void }) {
   const trackBWinner = WINNER_ENTRIES.find((entry) => entry.track === "B");
 
   if (!trackBWinner) {
@@ -373,7 +456,13 @@ function TrackBSpotlight() {
       </div>
 
       <div className="mx-auto max-w-5xl">
-        <WinnerCard entry={trackBWinner} featured className="min-h-[42rem]" />
+        <WinnerCard
+          entry={trackBWinner}
+          featured
+          featuredPhoto
+          onImagePreview={onImagePreview}
+          className="min-h-[42rem]"
+        />
       </div>
     </div>
   );
@@ -382,6 +471,15 @@ function TrackBSpotlight() {
 export default function WinnersShowcase() {
   const reduceMotion = useReducedMotion();
   const [activeTrack, setActiveTrack] = useState<WinnerTrack>("A");
+  const [previewEntry, setPreviewEntry] = useState<WinnerEntry | null>(null);
+
+  const openImagePreview = useCallback((entry: WinnerEntry) => {
+    if (entry.demoImageUrl) setPreviewEntry(entry);
+  }, []);
+
+  const closeImagePreview = useCallback(() => {
+    setPreviewEntry(null);
+  }, []);
 
   const introVariants = reduceMotion
     ? {
@@ -446,6 +544,7 @@ export default function WinnersShowcase() {
 
   return (
     <section className="relative z-10 px-6 py-8 sm:py-12 md:py-16">
+      <WinnerPhotoLightbox entry={previewEntry} onClose={closeImagePreview} />
       <div className="mx-auto max-w-7xl">
         <div className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.03] px-6 pt-10 pb-16 shadow-[0_0_80px_rgba(34,211,238,0.06)] backdrop-blur-md sm:px-8 sm:pt-12 sm:pb-16 md:px-10 lg:px-12 lg:pb-20">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/45 to-transparent" />
@@ -507,7 +606,7 @@ export default function WinnersShowcase() {
                   animate="animate"
                   exit="exit"
                 >
-                  <TrackAPodium />
+                  <TrackAPodium onImagePreview={openImagePreview} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -517,7 +616,7 @@ export default function WinnersShowcase() {
                   animate="animate"
                   exit="exit"
                 >
-                  <TrackBSpotlight />
+                  <TrackBSpotlight onImagePreview={openImagePreview} />
                 </motion.div>
               )}
             </AnimatePresence>

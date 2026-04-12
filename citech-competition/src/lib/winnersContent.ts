@@ -49,6 +49,8 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
       "CoreVision AI combines a live reactor digital twin, adaptive smart HUD, cognitive load monitoring, and explainable AI guidance for nuclear emergency response. It detects fault causes in real time and simplifies the interface when operator stress rises.",
     githubUrl: "https://github.com/BMohammed7/CoreVision-AI/tree/main",
     demoMediaKind: "image",
+    demoImageUrl: "/winners/corevision-ai.jpeg",
+    demoImageAlt: "CoreVision AI team with judges at CITech 2026",
   },
   {
     track: "A",
@@ -65,7 +67,9 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
     description:
       "NewTron focuses on the operator instead of only the plant. Its dynamic digital twin estimates workload, fatigue, and near-term performance degradation using multimodal sensing and edge-based preprocessing. The project stood out for its strong human-factors focus and modular sensing strategy.",
     githubUrl: "https://github.com/summitkabir6/newtron",
-    demoMediaKind: "video",
+    demoMediaKind: "image",
+    demoImageUrl: "/winners/newtron.jpeg",
+    demoImageAlt: "NewTron team with judges at CITech 2026",
   },
   {
     track: "A",
@@ -86,6 +90,8 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
       "DualAgent combines plant monitoring, operator-state awareness, and dual-agent decision support in a single control-room framework. Its main differentiator is attentional gating that delays AI-recommended actions until the operator is cognitively ready and focused on the correct safety-relevant information.",
     githubUrl: "https://github.com/ayaanahmed05/SMR-DualGuard",
     demoMediaKind: "image",
+    demoImageUrl: "/winners/dualagent.jpeg",
+    demoImageAlt: "DualAgent team with judges at CITech 2026",
   },
   {
     track: "B",
@@ -106,5 +112,7 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
     description:
       "GridSens models interconnected energy infrastructure as a live graph and uses AI to predict cascade failures before they happen, optimize energy dispatch in real time, and explain its decisions through SHAP-based attribution. The approach is grounded in real ERCOT load data from the 2021 Texas Winter Storm Uri crisis.",
     demoMediaKind: "image",
+    demoImageUrl: "/winners/gridsens.jpeg",
+    demoImageAlt: "GridSens team with judges at CITech 2026",
   },
 ];
