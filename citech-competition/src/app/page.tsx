@@ -1,14 +1,14 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Trophy, Calendar, Code, ChevronRight, LogOut, User } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight, Code, LogOut, Trophy, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import TiltCard from "@/components/TiltCard";
 import Marquee from "@/components/Marquee";
 import MagneticWrapper from "@/components/MagneticWrapper";
-import LandingHeroCountdown from "@/components/LandingHeroCountdown";
+import WinnersShowcase from "@/components/landing/WinnersShowcase";
 import { BrandLogo } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
 import { checkIsAdmin, getMyParticipant } from "@/lib/db";
@@ -39,20 +39,14 @@ export default function LandingPage() {
     isRegistered: false,
     initials: null,
   });
-  const [applicationsOpen, setApplicationsOpen] = useState(true);
 
   useEffect(() => {
     const loadAuth = async () => {
       const supabase = createClient();
-      const { data: eventState } = await supabase
-        .from("comp_event_state")
-        .select("applications_open")
-        .eq("id", 1)
-        .single();
-      if (typeof eventState?.applications_open === "boolean") {
-        setApplicationsOpen(eventState.applications_open);
-      }
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         setAuthState({
           loading: false,
@@ -69,9 +63,7 @@ export default function LandingPage() {
         (user.user_metadata?.name as string | undefined) ??
         `${user.user_metadata?.given_name ?? ""} ${user.user_metadata?.family_name ?? ""}`.trim();
 
-      const name: string = baseName && baseName.length > 0
-        ? baseName
-        : (user.email ?? "");
+      const name: string = baseName && baseName.length > 0 ? baseName : (user.email ?? "");
 
       const initials =
         name
@@ -115,27 +107,33 @@ export default function LandingPage() {
 
   const textVariants = {
     hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+    },
   };
+
+  const concludedCtaClassName =
+    "inline-flex cursor-not-allowed items-center gap-4 rounded-full border border-white/10 bg-white/5 px-8 py-5 text-lg font-medium text-zinc-300 opacity-80 backdrop-blur-md";
 
   return (
     <div className="min-h-screen relative overflow-hidden" ref={containerRef}>
-      {/* Dynamic Background */}
       <div className="fixed inset-0 pointer-events-none z-[-1]">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/20 blur-[150px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/20 blur-[150px]" />
         <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] rounded-full bg-purple-500/10 blur-[120px]" />
       </div>
 
-      {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 mix-blend-difference">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
           <MagneticWrapper>
-            <Link
-              href="/"
-              className="interactive group/logo"
-            >
-              <BrandLogo className="transition-transform group-hover/logo:scale-[1.03]" markClassName="w-12 h-12 text-cyan-400" textClassName="text-2xl font-black tracking-tighter text-white" />
+            <Link href="/" className="interactive group/logo">
+              <BrandLogo
+                className="transition-transform group-hover/logo:scale-[1.03]"
+                markClassName="w-12 h-12 text-cyan-400"
+                textClassName="text-2xl font-black tracking-tighter text-white"
+              />
             </Link>
           </MagneticWrapper>
 
@@ -151,20 +149,21 @@ export default function LandingPage() {
                   </Link>
                 </MagneticWrapper>
                 <MagneticWrapper>
-                  <Link
-                    href="/login?mode=signup"
-                    className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="rounded-full bg-white/90 px-6 py-3 text-sm font-medium text-black/70 opacity-70 cursor-not-allowed"
                   >
-                    <span className="sm:hidden">Register</span>
-                    <span className="hidden sm:inline">Register Now</span>
-                  </Link>
+                    <span className="sm:hidden">Later</span>
+                    <span className="hidden sm:inline">See You Next Time</span>
+                  </button>
                 </MagneticWrapper>
               </>
             )}
 
             {authState.loggedIn && (
               <>
-                {/* Primary action depends on registration/admin status */}
                 {authState.isAdmin ? (
                   <MagneticWrapper>
                     <Link
@@ -186,17 +185,18 @@ export default function LandingPage() {
                   </MagneticWrapper>
                 ) : (
                   <MagneticWrapper>
-                    <Link
-                      href="/register"
-                      className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition-transform interactive"
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      className="rounded-full bg-white/90 px-6 py-3 text-sm font-medium text-black/70 opacity-70 cursor-not-allowed"
                     >
-                      <span className="sm:hidden">Register</span>
-                      <span className="hidden sm:inline">Apply Now</span>
-                    </Link>
+                      <span className="sm:hidden">Later</span>
+                      <span className="hidden sm:inline">See You Next Time</span>
+                    </button>
                   </MagneticWrapper>
                 )}
 
-                {/* User chip + sign out */}
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/10">
                     <div className="w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center text-xs font-bold">
@@ -217,31 +217,22 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <motion.main style={{ y, opacity }} className="pt-40 pb-20 px-6 min-h-screen flex flex-col justify-center">
+      <motion.main
+        style={{ y, opacity }}
+        className="pt-40 pb-20 px-6 min-h-screen flex flex-col justify-center"
+      >
         <div className="max-w-7xl mx-auto w-full">
           <div className="flex flex-col items-start max-w-5xl">
             <motion.div
               initial="hidden"
               animate="visible"
               variants={textVariants}
-              className={`inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm mb-12 backdrop-blur-md ${
-                applicationsOpen ? "text-cyan-400" : "text-zinc-300"
-              }`}
+              className="mb-12 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 backdrop-blur-md"
             >
               <span className="relative flex h-2 w-2">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    applicationsOpen ? "bg-cyan-400" : "bg-zinc-400"
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${
-                    applicationsOpen ? "bg-cyan-500" : "bg-zinc-400"
-                  }`}
-                />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-zinc-400" />
               </span>
-              {applicationsOpen ? "Registration Open for 2026" : "Applications Closed for 2026"}
+              Concluded 2026
             </motion.div>
 
             <motion.h1
@@ -262,7 +253,8 @@ export default function LandingPage() {
               variants={textVariants}
               className="text-xl md:text-3xl text-zinc-400 mb-12 max-w-2xl font-light"
             >
-              Join the premier week-long competition hosted by CITech OTU. Compete, innovate, and secure your next interview.
+              The 2026 Cognitive Innovation Competition brought together engineering students for a week
+              of applied innovation at CITech OTU.
             </motion.p>
             <motion.p
               initial="hidden"
@@ -270,7 +262,9 @@ export default function LandingPage() {
               variants={textVariants}
               className="text-sm md:text-base text-zinc-500 mb-8 max-w-2xl font-medium border border-white/10 rounded-2xl px-4 py-3 bg-white/[0.03] backdrop-blur-sm"
             >
-              Limited to engineering students. The competition runs April 2–9, 2026, including opening and closing ceremonies. Two tracks; winners may be invited to interview for a summer 2026 research role (May–August 2026).
+              This competition was limited to engineering students. It ran from April 2 to April 9,
+              2026, including the opening and closing ceremonies. The competition is now concluded.
+              Winners from both tracks will be invited to interview for the student research internship.
             </motion.p>
 
             <motion.div
@@ -280,31 +274,26 @@ export default function LandingPage() {
               className="flex flex-col sm:flex-row items-center gap-6"
             >
               <MagneticWrapper>
-                <Link
-                  href="/register"
-                  className="interactive group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-full font-medium text-lg hover:bg-zinc-200 transition-all"
-                >
-                  Register Now
-                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                </Link>
+                <button type="button" disabled aria-disabled="true" className={concludedCtaClassName}>
+                  See You Next Time
+                  <ArrowRight className="w-6 h-6" />
+                </button>
               </MagneticWrapper>
               <div className="flex items-center gap-3 text-zinc-400 px-6 py-4 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
                 <Calendar className="w-5 h-5 text-cyan-400" />
-                <span className="font-mono text-sm tracking-wide">APR 2 — 9, 2026</span>
+                <span className="font-mono text-sm tracking-wide">APR 2 - 9, 2026</span>
               </div>
             </motion.div>
-
-            <LandingHeroCountdown />
           </div>
         </div>
       </motion.main>
 
-      {/* Infinite Marquee */}
+      <WinnersShowcase />
+
       <div className="my-20">
-        <Marquee text="• COGNITIVE INNOVATION COMPETITION 2026 " />
+        <Marquee text="COGNITIVE INNOVATION COMPETITION 2026 / " />
       </div>
 
-      {/* Prizes Section (3D Tilt Cards) */}
       <div className="py-32 px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -371,9 +360,9 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
-      
+
       <footer className="border-t border-white/10 py-12 text-center text-zinc-600 text-sm font-mono tracking-widest relative z-10 bg-black">
-        <p>© 2026 COGNITIVE INNOVATION COMPETITION. ALL RIGHTS RESERVED.</p>
+        <p>(c) 2026 COGNITIVE INNOVATION COMPETITION. ALL RIGHTS RESERVED.</p>
       </footer>
     </div>
   );
