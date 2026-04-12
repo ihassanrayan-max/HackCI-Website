@@ -154,9 +154,9 @@ function WinnerCard({
           </div>
         </div>
 
-        <div className="mb-6 overflow-hidden rounded-[1.55rem] border border-white/10 bg-black/30">
-          <div className="relative aspect-[16/9] overflow-hidden">
-            {entry.demoImageUrl ? (
+        {entry.demoImageUrl ? (
+          <div className="mb-6 overflow-hidden rounded-[1.55rem] border border-white/10 bg-black/30">
+            <div className="relative aspect-[16/9] overflow-hidden">
               <Image
                 src={entry.demoImageUrl}
                 alt={entry.demoImageAlt ?? entry.teamName}
@@ -164,34 +164,20 @@ function WinnerCard({
                 unoptimized
                 className="object-cover"
               />
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]" />
-                <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:22px_22px]" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/30 shadow-[0_0_24px_rgba(34,211,238,0.12)] backdrop-blur-sm">
-                    {entry.demoMediaKind === "video" ? (
-                      <Play className="h-5 w-5 translate-x-[1px] text-cyan-100" />
-                    ) : (
-                      <ImageIcon className="h-5 w-5 text-cyan-100" />
-                    )}
-                  </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 flex items-center p-4 sm:p-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-zinc-100">
+                  {entry.demoMediaKind === "video" ? (
+                    <Play className="h-3.5 w-3.5 text-cyan-200" />
+                  ) : (
+                    <ImageIcon className="h-3.5 w-3.5 text-cyan-200" />
+                  )}
+                  {entry.demoMediaKind === "video" ? "Demo Video" : "Demo Preview"}
                 </div>
-              </>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 flex items-center p-4 sm:p-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-zinc-100">
-                {entry.demoMediaKind === "video" ? (
-                  <Play className="h-3.5 w-3.5 text-cyan-200" />
-                ) : (
-                  <ImageIcon className="h-3.5 w-3.5 text-cyan-200" />
-                )}
-                {entry.demoMediaKind === "video" ? "Demo Video" : "Demo Preview"}
               </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="mb-6 rounded-[1.5rem] border border-white/10 bg-black/20 p-4 sm:p-5">
           <div className="mb-3 flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-zinc-400">

@@ -61,10 +61,10 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
       { name: "Urooj Fatima Khan", linkedinUrl: "https://www.linkedin.com/in/uroojfkhan/" },
       { name: "Summit Kabir", linkedinUrl: "https://www.linkedin.com/in/summit-kabir-101563290/" },
       { name: "Daniel Brown", linkedinUrl: "http://www.linkedin.com/in/daniel-brown-396926151" },
-      { name: "Areeb Ahmed" },
     ],
     description:
       "NewTron focuses on the operator instead of only the plant. Its dynamic digital twin estimates workload, fatigue, and near-term performance degradation using multimodal sensing and edge-based preprocessing. The project stood out for its strong human-factors focus and modular sensing strategy.",
+    githubUrl: "https://github.com/summitkabir6/newtron",
     demoMediaKind: "video",
   },
   {
@@ -72,7 +72,7 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
     trackLabel: "Track A",
     placement: "3rd",
     placementLabel: "3rd Place",
-    teamName: "SMR DualGuard",
+    teamName: "DualAgent",
     projectTitle: "A dual-agent decision-support framework for cognitively synchronized SMR control-room operation.",
     members: [
       {
@@ -83,7 +83,7 @@ export const WINNER_ENTRIES: WinnerEntry[] = [
       { name: "Vlad Modroiu", linkedinUrl: "https://www.linkedin.com/in/vlad-modroiu-131b3b201/" },
     ],
     description:
-      "SMR DualGuard combines plant monitoring, operator-state awareness, and dual-agent decision support in a single control-room framework. Its main differentiator is attentional gating that delays AI-recommended actions until the operator is cognitively ready and focused on the correct safety-relevant information.",
+      "DualAgent combines plant monitoring, operator-state awareness, and dual-agent decision support in a single control-room framework. Its main differentiator is attentional gating that delays AI-recommended actions until the operator is cognitively ready and focused on the correct safety-relevant information.",
     githubUrl: "https://github.com/ayaanahmed05/SMR-DualGuard",
     demoMediaKind: "image",
   },
